@@ -1,0 +1,1926 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<meta name="referrer" content="no-referrer">
+<title>لوحة متابعة طلاب نمو</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Reem+Kufi:wght@500&display=swap">
+<style>
+:root { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+img { max-width: 100%; } [hidden] { display: none !important; }
+/* Layout: a calm ledger — sticky header with sync state, tab rail, then summary-before-detail panels on a paper ground. */
+:root {
+  --bg: #f4f5f0;
+  --surface: #fcfcfa;
+  --surface-2: #eef0e9;
+  --line: #dde1d6;
+  --fg: #1b2420;
+  --muted: #5a645e;
+  --faint: #8a938d;
+  --accent: #1f5a66;
+  --accent-soft: #e2edee;
+  --accent-fg: #ffffff;
+  --gold: #8a6a1f;
+  --good: #2b7a2e;
+  --good-bg: #e5f2e3;
+  --warn: #a35a00;
+  --warn-bg: #fdf0dc;
+  --bad: #b3312f;
+  --bad-bg: #fbe6e4;
+  --info-bg: #eceff4;
+  --s1: #2a78d6;
+  --s2: #eb6834;
+  --s3: #1baf7a;
+  --grid: #e6e8e1;
+  --shadow: 0 1px 2px rgba(27, 36, 32, .06), 0 2px 8px rgba(27, 36, 32, .04);
+  --f-display: "Reem Kufi", "IBM Plex Sans Arabic", "Segoe UI", Tahoma, sans-serif;
+  --f-body: "IBM Plex Sans Arabic", "Segoe UI", Tahoma, "Geeza Pro", sans-serif;
+  --r: 10px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #111513; --surface: #181d1a; --surface-2: #1f2521; --line: #2c3430; --fg: #e5ebe7; --muted: #a2ada6; --faint: #78827c;
+    --accent: #79b9c4; --accent-soft: #1d3135; --accent-fg: #0f1a1c; --gold: #d0ac5a;
+    --good: #6cc56f; --good-bg: #183020; --warn: #f0a845; --warn-bg: #33260f; --bad: #f07a76; --bad-bg: #3a1918; --info-bg: #222831;
+    --s1: #3987e5; --s2: #d95926; --s3: #199e70; --grid: #262d29; --shadow: 0 1px 2px rgba(0,0,0,.4);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #111513; --surface: #181d1a; --surface-2: #1f2521; --line: #2c3430; --fg: #e5ebe7; --muted: #a2ada6; --faint: #78827c;
+  --accent: #79b9c4; --accent-soft: #1d3135; --accent-fg: #0f1a1c; --gold: #d0ac5a;
+  --good: #6cc56f; --good-bg: #183020; --warn: #f0a845; --warn-bg: #33260f; --bad: #f07a76; --bad-bg: #3a1918; --info-bg: #222831;
+  --s1: #3987e5; --s2: #d95926; --s3: #199e70; --grid: #262d29; --shadow: 0 1px 2px rgba(0,0,0,.4);
+  color-scheme: dark;
+}
+/* A light sheet used for PDF capture regardless of the viewer theme */
+.pdf-sheet {
+  --bg: #ffffff; --surface: #ffffff; --surface-2: #f2f3ef; --line: #d9ddd2; --fg: #111; --muted: #4c5550; --faint: #7d857f;
+  --accent: #1f5a66; --accent-soft: #e2edee; --good: #2b7a2e; --good-bg: #e5f2e3; --warn: #a35a00; --warn-bg: #fdf0dc; --bad: #b3312f; --bad-bg: #fbe6e4;
+  --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a; --grid: #e6e8e1;
+  background: #fff; color: #111; color-scheme: light;
+}
+
+* { box-sizing: border-box; }
+html, body { background: var(--bg); }
+body { color: var(--fg); font-family: var(--f-body); font-size: 15px; line-height: 1.6; direction: rtl; margin: 0; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 30; background: var(--surface); }
+button, input, select, textarea { font: inherit; color: inherit; }
+.num, td.n, .kpi .v { font-variant-numeric: tabular-nums; }
+a { color: var(--accent); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
+h1, h2, h3 { text-wrap: balance; margin: 0; }
+
+.wrap { max-width: 1240px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+
+/* header */
+.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; background: var(--surface); border-bottom: 1px solid var(--line); }
+.top .wrap { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; padding-block: 10px; }
+.brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.brand .mark { width: 34px; height: 34px; border-radius: 9px; background: var(--accent); color: var(--accent-fg); display: grid; place-items: center; font-family: var(--f-display); font-size: 19px; flex: none; }
+.brand h1 { font-family: var(--f-display); font-weight: 500; font-size: 20px; line-height: 1.2; }
+.brand .dates { color: var(--muted); font-size: 12.5px; }
+.top .spacer { flex: 1 1 auto; }
+.sync { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+.chip { display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; padding: 2px 10px; font-size: 12.5px; line-height: 1.7; white-space: nowrap; border: 1px solid transparent; }
+.chip.good { background: var(--good-bg); color: var(--good); }
+.chip.warn { background: var(--warn-bg); color: var(--warn); }
+.chip.bad { background: var(--bad-bg); color: var(--bad); }
+.chip.info { background: var(--info-bg); color: var(--muted); }
+.chip.acc { background: var(--accent-soft); color: var(--accent); }
+.chip .ico { font-size: 11px; }
+
+.btn { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line); background: var(--surface); padding: 6px 12px; border-radius: 8px; cursor: pointer; font-size: 14px; white-space: nowrap; }
+.btn:hover { background: var(--surface-2); }
+.btn.primary { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+.btn.primary:hover { filter: brightness(1.06); }
+.btn.ghost { border-color: transparent; background: transparent; color: var(--accent); padding-inline: 8px; }
+.btn.small { padding: 3px 9px; font-size: 13px; }
+.btn.danger { color: var(--bad); }
+.btn[disabled] { opacity: .55; cursor: default; }
+
+/* tabs */
+.tabs { display: flex; gap: 2px; overflow-x: auto; scrollbar-width: none; padding-block: 0; }
+.tabs::-webkit-scrollbar { display: none; }
+.tab { border: 0; background: none; padding: 10px 14px; cursor: pointer; color: var(--muted); border-bottom: 2px solid transparent; white-space: nowrap; font-size: 14.5px; }
+.tab[aria-selected="true"] { color: var(--fg); border-bottom-color: var(--accent); font-weight: 600; }
+.tabbar { border-top: 1px solid var(--line); }
+.tabbar .wrap { padding-block: 0; }
+
+/* filters */
+.filters { display: flex; flex-wrap: wrap; gap: 10px 12px; align-items: end; padding-block: 16px 4px; }
+.field { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.field label { font-size: 12px; color: var(--muted); letter-spacing: .02em; }
+select, input[type=text], input[type=search], input[type=number], input[type=date], input[type=url], textarea {
+  background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; min-height: 36px; max-width: 100%;
+}
+textarea { min-height: 90px; resize: vertical; width: 100%; line-height: 1.7; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 9px; overflow: hidden; background: var(--surface); }
+.seg button { border: 0; background: none; padding: 6px 12px; cursor: pointer; color: var(--muted); font-size: 14px; }
+.seg button[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+
+main { padding-block: 8px 48px; }
+.section-title { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin: 26px 0 10px; }
+.section-title h2 { font-family: var(--f-display); font-weight: 500; font-size: 19px; }
+.section-title .sub { color: var(--muted); font-size: 13px; }
+
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 16px; min-width: 0; }
+.panel h3 { font-size: 15px; font-weight: 600; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; justify-content: space-between; }
+.panel h3 .hint { font-weight: 400; color: var(--muted); font-size: 12.5px; }
+.grid { display: grid; gap: 14px; }
+.g2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.g3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+@media (max-width: 900px) { .g3 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 680px) { .g2, .g3 { grid-template-columns: minmax(0, 1fr); } }
+
+/* KPI strip */
+.kpis { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 0; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; }
+.kpi { padding: 14px 16px; border-inline-start: 1px solid var(--line); min-width: 0; }
+.kpi:first-child { border-inline-start: 0; }
+.kpi .l { font-size: 12.5px; color: var(--muted); }
+.kpi .v { font-size: 26px; font-weight: 600; line-height: 1.25; margin-top: 2px; }
+.kpi .v small { font-size: 14px; color: var(--muted); font-weight: 400; }
+.kpi .s { font-size: 12.5px; color: var(--muted); margin-top: 2px; }
+@media (max-width: 1000px) { .kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); } .kpi:nth-child(4) { border-inline-start: 0; } .kpi:nth-child(n+4) { border-top: 1px solid var(--line); } }
+@media (max-width: 560px) { .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } .kpi { border-inline-start: 0 !important; border-top: 1px solid var(--line); } .kpi:nth-child(-n+2) { border-top: 0; } .kpi:nth-child(even) { border-inline-start: 1px solid var(--line) !important; } }
+
+/* lists of students */
+.rank { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.rank li { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 7px 0; border-top: 1px solid var(--grid); }
+.rank li:first-child { border-top: 0; }
+.rank .i { color: var(--faint); font-size: 12.5px; text-align: center; }
+.rank .nm { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rank .nm button { all: unset; cursor: pointer; }
+.rank .nm button:hover { color: var(--accent); text-decoration: underline; }
+.rank .nm small { color: var(--muted); display: block; font-size: 12px; }
+.rank .val { font-weight: 600; }
+.empty { color: var(--muted); font-size: 13.5px; padding: 8px 0; }
+
+/* tables */
+.tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--r); background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { padding: 9px 12px; text-align: start; border-bottom: 1px solid var(--grid); vertical-align: middle; }
+th { font-weight: 600; font-size: 12.5px; color: var(--muted); background: var(--surface-2); white-space: nowrap; position: sticky; top: 0; }
+th.sortable { cursor: pointer; user-select: none; }
+th.sortable:hover { color: var(--fg); }
+th .arr { font-size: 10px; margin-inline-start: 4px; }
+tbody tr:last-child td { border-bottom: 0; }
+tbody tr.click { cursor: pointer; }
+tbody tr.click:hover { background: var(--surface-2); }
+td.n { text-align: center; white-space: nowrap; }
+td.name { font-weight: 500; min-width: 170px; }
+tr.grouphead td { background: var(--surface-2); font-weight: 600; font-size: 13.5px; }
+tr.foot td { font-weight: 600; background: var(--surface-2); }
+.cell-bar { display: flex; align-items: center; gap: 8px; justify-content: center; }
+.minibar { width: 46px; height: 6px; background: var(--grid); border-radius: 3px; overflow: hidden; flex: none; }
+.minibar i { display: block; height: 100%; border-radius: 3px; background: var(--good); }
+.minibar i.warn { background: var(--warn); }
+.minibar i.bad { background: var(--bad); }
+.tot { font-weight: 700; }
+.tot.good { color: var(--good); } .tot.warn { color: var(--warn); } .tot.bad { color: var(--bad); }
+.delta { font-size: 12.5px; white-space: nowrap; }
+.delta.up { color: var(--good); } .delta.down { color: var(--bad); } .delta.flat { color: var(--muted); }
+
+/* student page */
+.backline { display: flex; align-items: center; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
+.profile { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 14px; margin-top: 12px; }
+@media (max-width: 860px) { .profile { grid-template-columns: minmax(0, 1fr); } }
+.profile h2 { font-family: var(--f-display); font-weight: 500; font-size: 26px; }
+.meta { display: flex; flex-wrap: wrap; gap: 6px 14px; color: var(--muted); font-size: 13.5px; margin-top: 6px; }
+.scorebig { display: flex; gap: 22px; flex-wrap: wrap; margin-top: 14px; }
+.scorebig .b { min-width: 0; }
+.scorebig .b .l { font-size: 12.5px; color: var(--muted); }
+.scorebig .b .v { font-size: 34px; font-weight: 700; line-height: 1.15; font-variant-numeric: tabular-nums; }
+.scorebig .b .v small { font-size: 15px; color: var(--muted); font-weight: 400; }
+.crit { display: flex; flex-direction: column; gap: 10px; }
+.crit .row { display: grid; grid-template-columns: 150px minmax(0, 1fr) 64px 92px; gap: 10px; align-items: center; }
+@media (max-width: 520px) { .crit .row { grid-template-columns: 96px minmax(0, 1fr) 54px; } .crit .row .chip { display: none; } }
+.crit .track { height: 10px; background: var(--grid); border-radius: 5px; overflow: hidden; }
+.crit .track i { display: block; height: 100%; border-radius: 5px; }
+.analysis { border-inline-start: 3px solid var(--gold); background: var(--surface-2); padding: 12px 14px; border-radius: 0 8px 8px 0; }
+.analysis p { margin: 0 0 6px; }
+.analysis .rec { color: var(--fg); font-weight: 500; }
+.analysis .lbl { font-size: 12px; color: var(--gold); font-weight: 600; letter-spacing: .02em; }
+.facts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+@media (max-width: 700px) { .facts { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.fact { background: var(--surface-2); border-radius: 8px; padding: 10px 12px; min-width: 0; }
+.fact .l { font-size: 12px; color: var(--muted); }
+.fact .v { font-weight: 600; font-size: 17px; font-variant-numeric: tabular-nums; }
+.daytable td { vertical-align: top; }
+.ent { font-size: 13px; line-height: 1.55; }
+.ent .k { font-weight: 600; }
+.ent .rng { color: var(--muted); }
+.ent + .ent { margin-top: 6px; }
+.flag { color: var(--warn); font-size: 12.5px; }
+.ovr { color: var(--gold); font-size: 12.5px; }
+
+.chartbox { position: relative; height: 260px; }
+.chartbox.tall { height: 300px; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12.5px; color: var(--muted); margin-top: 8px; }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-inline-end: 6px; vertical-align: -1px; }
+
+/* alerts */
+.alert-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.alert-list li { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 10px; align-items: start; padding: 10px 12px; border-radius: 8px; background: var(--surface-2); }
+.alert-list li .who { font-weight: 600; }
+.alert-list li .who button { all: unset; cursor: pointer; }
+.alert-list li .who button:hover { text-decoration: underline; }
+.alert-list li .txt { color: var(--muted); font-size: 13.5px; }
+
+/* banners & toasts */
+.banner { display: flex; gap: 10px; align-items: flex-start; padding: 10px 14px; border-radius: 9px; margin-top: 14px; font-size: 14px; }
+.banner.warn { background: var(--warn-bg); color: var(--warn); }
+.banner.bad { background: var(--bad-bg); color: var(--bad); }
+.banner.info { background: var(--info-bg); color: var(--muted); }
+.banner b { color: inherit; }
+.toast { position: fixed; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); left: 50%; transform: translateX(-50%); background: var(--fg); color: var(--bg); padding: 10px 16px; border-radius: 10px; font-size: 14px; z-index: 50; max-width: calc(100% - 32px); box-shadow: var(--shadow); }
+
+/* settings */
+.form-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; }
+.daypick { display: flex; flex-wrap: wrap; gap: 8px; }
+.daypick label { display: inline-flex; gap: 6px; align-items: center; border: 1px solid var(--line); border-radius: 8px; padding: 4px 10px; cursor: pointer; }
+.rowedit td { padding: 6px 8px; }
+.rowedit input, .rowedit select { width: 100%; min-width: 120px; }
+.help { color: var(--muted); font-size: 13px; margin: 4px 0 10px; }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; align-items: center; }
+details.method { margin-top: 12px; }
+details.method summary { cursor: pointer; color: var(--accent); }
+details.method ol, details.method ul { padding-inline-start: 20px; margin: 8px 0; }
+.wa { white-space: pre-wrap; background: var(--surface-2); border-radius: 8px; padding: 12px; font-size: 13.5px; max-height: 320px; overflow: auto; }
+.overlay { position: fixed; inset: 0; background: rgba(10, 14, 12, .45); z-index: 40; display: grid; place-items: center; padding: 16px; }
+.dialog { background: var(--surface); border-radius: 12px; border: 1px solid var(--line); width: min(620px, 100%); max-height: 88vh; overflow: auto; padding: 18px; box-shadow: var(--shadow); }
+.dialog h3 { font-size: 17px; margin-bottom: 8px; }
+.muted { color: var(--muted); }
+.small { font-size: 12.5px; }
+.loading { padding: 60px 0; text-align: center; color: var(--muted); }
+.report-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+.report-head h2 { font-family: var(--f-display); font-weight: 500; font-size: 21px; }
+@media (prefers-reduced-motion: no-preference) { .tab, .btn, tbody tr { transition: background-color .15s, color .15s; } }
+
+.daytable td:first-child { white-space: nowrap; }
+
+
+.lockscreen { position: fixed; inset: 0; z-index: 60; background: var(--bg); display: grid; place-items: center; padding: 16px; }
+.lockcard { width: min(380px, 100%); background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 28px 24px; display: flex; flex-direction: column; gap: 10px; box-shadow: var(--shadow); }
+.lockcard .mark { width: 44px; height: 44px; border-radius: 11px; background: var(--accent); color: var(--accent-fg); display: grid; place-items: center; font-family: var(--f-display); font-size: 24px; }
+.lockcard h1 { font-family: var(--f-display); font-weight: 500; font-size: 22px; }
+.lockcard p { margin: 0; }
+.lockcard input { width: 100%; font-size: 16px; }
+.lockcard .btn { justify-content: center; padding: 9px; font-size: 15px; }
+#lockMsg { color: var(--bad); min-height: 1.6em; }
+
+</style>
+</head>
+<body>
+<div id="lock" class="lockscreen" hidden>
+  <form id="lockForm" class="lockcard" autocomplete="on">
+    <div class="mark" aria-hidden="true">ن</div>
+    <h1>لوحة متابعة طلاب نمو</h1>
+    <p class="muted">البيانات مشفّرة. أدخل كلمة المرور لعرضها.</p>
+    <label for="pw" class="small muted">كلمة المرور</label>
+    <input id="pw" type="password" autocomplete="current-password" required>
+    <button class="btn primary" type="submit">دخول</button>
+    <p id="lockMsg" class="small" role="status"></p>
+  </form>
+</div>
+<header class="top">
+  <div class="wrap">
+    <div class="brand">
+      <div class="mark" aria-hidden="true">ن</div>
+      <div>
+        <h1>لوحة متابعة طلاب نمو</h1>
+        <div class="dates" id="dates"></div>
+      </div>
+    </div>
+    <div class="spacer"></div>
+    <div class="sync" id="syncbox" aria-live="polite"></div>
+  </div>
+  <nav class="tabbar" aria-label="أقسام اللوحة">
+    <div class="wrap tabs" role="tablist">
+      <button class="tab" type="button" role="tab" data-view="overview">لوحة التحكم</button>
+      <button class="tab" type="button" role="tab" data-view="students">الطلاب</button>
+      <button class="tab" type="button" role="tab" data-view="reports">التقارير</button>
+      <button class="tab" type="button" role="tab" data-view="alerts">التنبيهات</button>
+      <button class="tab" type="button" role="tab" data-view="settings">الإعدادات</button>
+    </div>
+  </nav>
+</header>
+<main class="wrap" id="main"><div class="loading">جارٍ تحميل بيانات الطلاب…</div></main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+/* Standalone (GitHub Pages) shell: decrypt data.enc.json with the password, then serve it to the app as a read-only store. */
+(function () {
+  'use strict';
+  window.NUMOW_STATIC_MODE = true;
+  let resolveUnlock;
+  window.NUMOW_UNLOCKED = new Promise((r) => { resolveUnlock = r; });
+  const b64 = (s) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0));
+  const toB64 = (buf) => btoa(String.fromCharCode.apply(null, new Uint8Array(buf)));
+  let pkg = null;
+
+  async function loadPkg() {
+    if (pkg) return pkg;
+    const r = await fetch('data.enc.json?t=' + Date.now(), { cache: 'no-store' });
+    if (!r.ok) throw new Error('fetch');
+    pkg = await r.json();
+    return pkg;
+  }
+  async function keyFromPassword(pw, p) {
+    const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(pw), 'PBKDF2', false, ['deriveKey']);
+    return crypto.subtle.deriveKey({ name: 'PBKDF2', salt: b64(p.salt), iterations: p.iter, hash: 'SHA-256' }, base, { name: 'AES-GCM', length: 256 }, true, ['decrypt']);
+  }
+  async function decryptWith(key, p) {
+    const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: b64(p.iv) }, key, b64(p.ct));
+    return JSON.parse(new TextDecoder().decode(pt));
+  }
+
+  function install(data) {
+    const store = new Map(Object.entries(data.docs || {}));
+    const snap = (p) => ({ id: p.split('/').pop(), exists: store.has(p), data: () => store.get(p), metadata: { fromCache: false, hasPendingWrites: false } });
+    const coll = (c) => Array.from(store.keys()).filter((k) => k.startsWith(c + '/') && k.split('/').length === c.split('/').length + 1).sort().map(snap);
+    const deny = async () => { throw { code: 'invalid_argument', message: 'read-only' }; };
+    const docRef = (p) => ({ id: p.split('/').pop(), path: p, get: async () => snap(p), set: deny, update: deny, delete: deny,
+      onSnapshot: (n) => { setTimeout(() => n(snap(p)), 0); return () => {}; } });
+    const query = (c) => { const q = { limit: () => q, orderBy: () => q, where: () => q,
+      get: async () => { const docs = coll(c); return { docs, size: docs.length, empty: !docs.length }; },
+      onSnapshot: (n) => { setTimeout(() => { const docs = coll(c); n({ docs, size: docs.length, empty: !docs.length, docChanges: () => [], metadata: {} }); }, 0); return () => {}; },
+      doc: (id) => docRef(c + '/' + id), add: deny }; return q; };
+    const ns = { db: { doc: docRef, collection: query }, user: { id: async () => null, isOwner: () => false, canEdit: () => false, can: () => false } };
+    window.claude = { use: async (n) => ns[n] || null };
+    window.NUMOW_EXPORTED_AT = data.exportedAt;
+    resolveUnlock();
+  }
+
+  async function tryUnlock(pw) {
+    const p = await loadPkg();
+    const key = await keyFromPassword(pw, p);
+    const data = await decryptWith(key, p);
+    try { sessionStorage.setItem('numow-key', JSON.stringify({ salt: p.salt, k: toB64(await crypto.subtle.exportKey('raw', key)) })); } catch (e) { }
+    return data;
+  }
+  async function trySaved() {
+    let saved = null;
+    try { saved = JSON.parse(sessionStorage.getItem('numow-key') || 'null'); } catch (e) { }
+    if (!saved) return null;
+    const p = await loadPkg();
+    if (saved.salt !== p.salt) return null;
+    const key = await crypto.subtle.importKey('raw', b64(saved.k), { name: 'AES-GCM' }, false, ['decrypt']);
+    try { return await decryptWith(key, p); } catch (e) { return null; }
+  }
+
+  function showLock() {
+    const el = document.getElementById('lock');
+    el.hidden = false;
+    const form = document.getElementById('lockForm'), input = document.getElementById('pw'), msg = document.getElementById('lockMsg'), btn = form.querySelector('button');
+    input.focus();
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!input.value) return;
+      btn.disabled = true; msg.textContent = 'جارٍ فتح البيانات…';
+      try { const data = await tryUnlock(input.value); el.hidden = true; install(data); }
+      catch (err) { msg.textContent = err && err.message === 'fetch' ? 'تعذّر تحميل البيانات، تحقق من الاتصال.' : 'كلمة المرور غير صحيحة.'; input.select(); }
+      finally { btn.disabled = false; }
+    });
+  }
+
+  document.addEventListener('DOMContentLoaded', async () => {
+    try { const d = await trySaved(); if (d) { install(d); return; } } catch (e) { }
+    showLock();
+  });
+})();
+
+</script>
+<script>
+/* Numow scoring engine — pure functions, no DOM. Shared by the page and the tests. */
+(function (root) {
+  'use strict';
+
+  const DAY_NAMES = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
+  const CRITERIA = ['att', 'hifz', 'rev'];
+  const CRIT_LABEL = { att: 'الحضور', hifz: 'الحفظ', rev: 'المراجعة أو التثبيت' };
+
+  const DEFAULT_SETTINGS = {
+    semester: { name: 'الفصل الدراسي الأول 1448هـ', start: '2026-08-30', weeks: 19 },
+    studyDays: [0, 1, 2, 3],
+    points: { att: 5, hifz: 5, rev: 5 },
+    attendance: {
+      'حاضر': { mode: 'points', points: 5 },
+      'متأخر': { mode: 'points', points: 3 },
+      'مستأذن': { mode: 'exclude', points: 0 },
+      'غائب': { mode: 'points', points: 0 }
+    },
+    revPolicy: 'avg',          // avg | max | min | review_first | tathbit_first
+    missingEntry: 'zero',      // zero | skip   (present, activity required, nothing recited)
+    holidays: [],              // extra holiday dates YYYY-MM-DD
+    thresholds: { weekLow: 45, critical: 36, absenceRepeat: 2, absenceWindowWeeks: 4, changeNotable: 6, criterionWeak: 14, criterionGood: 16, criterionExcellent: 18 }
+  };
+
+  function mergeSettings(s) {
+    const d = JSON.parse(JSON.stringify(DEFAULT_SETTINGS));
+    if (!s) return d;
+    for (const k of Object.keys(s)) {
+      if (s[k] && typeof s[k] === 'object' && !Array.isArray(s[k]) && d[k] && typeof d[k] === 'object' && !Array.isArray(d[k])) {
+        d[k] = Object.assign({}, d[k], s[k]);
+      } else if (s[k] !== undefined) d[k] = s[k];
+    }
+    return d;
+  }
+
+  /* ---------- dates ---------- */
+  function parseDate(g) { const [y, m, d] = g.split('-').map(Number); return new Date(Date.UTC(y, m - 1, d)); }
+  function fmtDate(dt) { return dt.toISOString().slice(0, 10); }
+  function addDays(g, n) { const d = parseDate(g); d.setUTCDate(d.getUTCDate() + n); return fmtDate(d); }
+  function weekday(g) { return parseDate(g).getUTCDay(); }
+  function weekStartOf(g) { return addDays(g, -weekday(g)); }
+  function riyadhToday(now) {
+    const d = now ? new Date(now) : new Date();
+    return new Date(d.getTime() + 3 * 3600 * 1000).toISOString().slice(0, 10);
+  }
+
+  /* ---------- classification ---------- */
+  function classifyStatus(s) {
+    if (s === null || s === undefined) return 'pending';
+    const t = String(s).trim();
+    if (!t || t === '-' || t === '(-)') return 'pending';
+    if (t.includes('إجازة') || t.includes('اجازة') || t.includes('عطلة')) return 'holiday';
+    if (t.includes('عذر') || t.includes('مستأذن') || t.includes('مستاذن') || t.includes('استئذان')) return 'excused';
+    if (t.includes('غائب') || t.includes('غياب')) return 'absent';
+    if (t.includes('متأخر') || t.includes('متاخر') || t.includes('تأخر')) return 'late';
+    if (t.includes('حاضر') || t.includes('حضور')) return 'present';
+    return 'other';
+  }
+  const STATUS_LABEL = { pending: 'لم تُرصد', holiday: 'إجازة', excused: 'غائب بعذر', absent: 'غائب', late: 'متأخر', present: 'حاضر', other: 'حالة أخرى', notStudy: 'ليس يوم حلقة' };
+
+  function entryKind(k) {
+    const t = String(k || '');
+    if (t.includes('حفظ')) return 'hifz';
+    if (t.includes('مراجع')) return 'murajaa';
+    if (t.includes('تثبيت')) return 'tathbit';
+    return 'other';
+  }
+
+  function attPolicyFor(status, rawText, settings) {
+    const pol = settings.attendance || {};
+    const keyByStatus = { present: 'حاضر', late: 'متأخر', excused: 'مستأذن', absent: 'غائب' };
+    if (rawText && pol[rawText]) return pol[rawText];
+    if (keyByStatus[status] && pol[keyByStatus[status]]) return pol[keyByStatus[status]];
+    return null;
+  }
+
+  /* ratio of an activity group: null = not required/not counted, number in [0, inf) */
+  function activityRatio(entries, settings, forceZeroMissing) {
+    let a = 0, r = 0, any = false, missing = false;
+    for (const e of entries) {
+      if (e.r === null || e.r === undefined || !(e.r > 0)) continue;
+      if (e.a === null || e.a === undefined) {
+        if (forceZeroMissing || settings.missingEntry === 'zero') { r += e.r; any = true; missing = true; }
+        continue;
+      }
+      a += e.a; r += e.r; any = true;
+    }
+    if (!any) return null;
+    return { ratio: r > 0 ? a / r : 0, achieved: a, required: r, missing };
+  }
+
+  function combineRev(m, t, policy) {
+    const avail = [m, t].filter(Boolean);
+    if (!avail.length) return null;
+    if (avail.length === 1) return { ...avail[0], chosen: m ? 'murajaa' : 'tathbit' };
+    const cm = Math.min(1, m.ratio), ct = Math.min(1, t.ratio);
+    switch (policy) {
+      case 'max': return cm >= ct ? { ...m, chosen: 'murajaa' } : { ...t, chosen: 'tathbit' };
+      case 'min': return cm <= ct ? { ...m, chosen: 'murajaa' } : { ...t, chosen: 'tathbit' };
+      case 'review_first': return { ...m, chosen: 'murajaa' };
+      case 'tathbit_first': return { ...t, chosen: 'tathbit' };
+      default: return { ratio: (cm + ct) / 2, chosen: 'avg', missing: m.missing || t.missing, achieved: null, required: null };
+    }
+  }
+
+  const round2 = (x) => Math.round(x * 100) / 100;
+
+  /* ---------- one day ---------- */
+  function scoreDay(day, settings, ctx) {
+    ctx = ctx || {};
+    const P = settings.points;
+    const g = day.g;
+    const wd = weekday(g);
+    const out = {
+      g, h: day.h || null, weekday: wd, dayName: DAY_NAMES[wd], raw: day.s,
+      status: classifyStatus(day.s), entries: (day.e || []).map((e) => ({ ...e, kind: entryKind(e.k) })),
+      crit: { att: null, hifz: null, rev: null }, earned: 0, max: 0, counted: false, flags: [], override: null
+    };
+    if ((settings.holidays || []).includes(g)) { out.status = 'holiday'; out.flags.push('إجازة معتمدة من الإعدادات'); }
+    else if (!settings.studyDays.includes(wd) && out.status !== 'present' && out.status !== 'late') { out.status = 'notStudy'; }
+    out.label = STATUS_LABEL[out.status] || out.raw;
+
+    if (['holiday', 'notStudy', 'pending'].includes(out.status)) return applyOverride(out, ctx.override, settings);
+
+    const pol = attPolicyFor(out.status, day.s && String(day.s).trim(), settings);
+    if (out.status === 'other' && !pol) { out.flags.push('حالة حضور غير معروفة: ' + day.s); return applyOverride(out, ctx.override, settings); }
+    if (pol && pol.mode === 'exclude') { out.flags.push('مستبعد من الاحتساب حسب سياسة الحضور'); out.excluded = true; return applyOverride(out, ctx.override, settings); }
+
+    const attPts = pol ? Math.min(P.att, Math.max(0, Number(pol.points) || 0)) : 0;
+    out.crit.att = { earned: attPts, max: P.att };
+
+    const hifzE = out.entries.filter((e) => e.kind === 'hifz');
+    const murE = out.entries.filter((e) => e.kind === 'murajaa');
+    const tatE = out.entries.filter((e) => e.kind === 'tathbit');
+    const isAbsent = out.status === 'absent' || (out.status === 'excused');
+
+    if (isAbsent && !out.entries.length) {
+      out.crit.hifz = { earned: 0, max: P.hifz, ratio: 0, note: 'غائب' };
+      out.crit.rev = { earned: 0, max: P.rev, ratio: 0, note: 'غائب' };
+    } else {
+      const h = activityRatio(hifzE, settings, isAbsent);
+      if (h) {
+        out.crit.hifz = { earned: round2(Math.min(1, h.ratio) * P.hifz), max: P.hifz, ratio: h.ratio, achieved: h.achieved, required: h.required, missing: h.missing };
+        if (h.missing && !isAbsent) out.flags.push('حاضر ولم يُسجَّل له تسميع حفظ');
+      }
+      const m = activityRatio(murE, settings, isAbsent);
+      const t = activityRatio(tatE, settings, isAbsent);
+      const rv = combineRev(m, t, settings.revPolicy);
+      if (rv) {
+        out.crit.rev = { earned: round2(Math.min(1, rv.ratio) * P.rev), max: P.rev, ratio: rv.ratio, chosen: rv.chosen, murajaa: m, tathbit: t, missing: rv.missing };
+        if (rv.missing && !isAbsent) out.flags.push('حاضر ولم يُسجَّل له تسميع مراجعة أو تثبيت');
+      }
+    }
+    out.counted = true;
+    return applyOverride(out, ctx.override, settings);
+  }
+
+  function applyOverride(out, ov, settings) {
+    if (ov && ov.values) {
+      const P = settings.points;
+      for (const c of CRITERIA) {
+        const v = ov.values[c];
+        if (v === null || v === undefined || v === '') continue;
+        if (v === 'na') { out.crit[c] = null; continue; }
+        const n = Math.max(0, Math.min(P[c], Number(v)));
+        out.crit[c] = Object.assign({}, out.crit[c] || {}, { earned: n, max: P[c], overridden: true });
+      }
+      out.override = ov;
+      if (CRITERIA.some((c) => out.crit[c])) { out.counted = true; out.excluded = false; }
+    }
+    out.earned = 0; out.max = 0;
+    for (const c of CRITERIA) if (out.crit[c]) { out.earned += out.crit[c].earned; out.max += out.crit[c].max; }
+    out.earned = round2(out.earned);
+    const full = settings.points.att + settings.points.hifz + settings.points.rev;
+    out.norm15 = out.max > 0 ? round2(out.earned / out.max * full) : null;
+    if (out.earned > full + 1e-9) throw new Error('daily score above maximum for ' + out.g);
+    return out;
+  }
+
+  /* ---------- one week ---------- */
+  function scoreWeek(doc, settings, opts) {
+    opts = opts || {};
+    const today = opts.today || riyadhToday();
+    const overrides = opts.overrides || {};
+    const P = settings.points;
+    const days = (doc.days || []).map((d) => scoreDay(d, settings, { override: overrides[doc.sid + '_' + d.g] }));
+    const agg = {}; for (const c of CRITERIA) agg[c] = { earned: 0, max: 0 };
+    let pending = 0, studyDays = 0, absent = 0, late = 0, excused = 0, present = 0, holidays = 0;
+    for (const d of days) {
+      if (d.status === 'holiday' || d.status === 'notStudy') { holidays++; continue; }
+      studyDays++;
+      if (d.status === 'pending' && !d.override) { if (d.g <= today) pending++; else pending++; continue; }
+      if (d.status === 'absent') absent++;
+      if (d.status === 'late') late++;
+      if (d.status === 'excused') excused++;
+      if (d.status === 'present' || d.status === 'late') present++;
+      for (const c of CRITERIA) if (d.crit[c]) { agg[c].earned += d.crit[c].earned; agg[c].max += d.crit[c].max; }
+    }
+    const per = 20 * (settings.points.att + settings.points.hifz + settings.points.rev) / 15 / 3; // 20 when 5/5/5
+    const crit = {};
+    let stdSum = 0, stdMax = 0;
+    for (const c of CRITERIA) {
+      const a = agg[c];
+      const critMax = P[c] * 4;   // a regular four-day week
+      crit[c] = { earned: round2(a.earned), max: a.max, std: a.max > 0 ? round2(a.earned / a.max * critMax) : null, stdMax: critMax };
+      if (crit[c].std !== null) { stdSum += crit[c].std; stdMax += critMax; }
+    }
+    const fullWeek = (P.att + P.hifz + P.rev) * 4;
+    const actualEarned = round2(CRITERIA.reduce((s, c) => s + agg[c].earned, 0));
+    const actualMax = CRITERIA.reduce((s, c) => s + agg[c].max, 0);
+    const total = stdMax > 0 ? round2(stdSum / stdMax * fullWeek) : null;
+    const lastStudy = days.filter((d) => settings.studyDays.includes(d.weekday)).map((d) => d.g).sort().pop() || doc.weekStart;
+    const complete = pending === 0 && lastStudy <= today && actualMax > 0;
+    if (total !== null && total > fullWeek + 1e-9) throw new Error('weekly score above maximum');
+    if (actualEarned > fullWeek + 1e-9) throw new Error('weekly actual above maximum');
+    return {
+      sid: doc.sid, weekStart: doc.weekStart, days, crit, total, totalMax: fullWeek, actualEarned, actualMax,
+      complete, hasData: actualMax > 0, pending, studyDays, holidays, absent, late, excused, present,
+      attendanceRate: (present + absent) > 0 ? present / (present + absent) : null,
+      issues: doc.issues || [], fetchedAt: doc.fetchedAt || null
+    };
+  }
+
+  /* ---------- levels & analysis ---------- */
+  function levelOf(v, max, th) {
+    if (v === null || v === undefined) return { key: 'na', label: 'لا يوجد' };
+    const s = v / max * 20;
+    if (s >= th.criterionExcellent) return { key: 'excellent', label: 'ممتاز' };
+    if (s >= th.criterionGood) return { key: 'vgood', label: 'جيد جدًا' };
+    if (s >= th.criterionWeak) return { key: 'good', label: 'جيد' };
+    return { key: 'weak', label: 'يحتاج متابعة' };
+  }
+  function totalLevel(t, th, full) {
+    if (t === null) return { key: 'na', label: 'لا توجد بيانات' };
+    const s = t / full * 60;
+    if (s < th.critical) return { key: 'critical', label: 'متابعة عاجلة' };
+    if (s < th.weekLow) return { key: 'weak', label: 'دون الحد' };
+    if (s >= 54) return { key: 'excellent', label: 'ممتاز' };
+    return { key: 'good', label: 'جيد' };
+  }
+
+  /* history: array of scored weeks for one student sorted ascending by weekStart */
+  function analyzeStudent(history, settings, focusWeek) {
+    const th = settings.thresholds;
+    const withData = history.filter((w) => w.hasData);
+    const idx = focusWeek ? withData.findIndex((w) => w.weekStart === focusWeek) : withData.length - 1;
+    const cur = idx >= 0 ? withData[idx] : null;
+    const prev = idx > 0 ? withData[idx - 1] : null;
+    const res = { cur, prev, facts: [], alerts: [], weakest: null, strongest: null, delta: null };
+    const finals = withData.filter((w) => w.complete);
+    res.semesterAvg = finals.length ? round2(finals.reduce((s, w) => s + w.total, 0) / finals.length) : null;
+    res.best = finals.length ? finals.reduce((b, w) => (w.total > b.total ? w : b)) : null;
+    res.worst = finals.length ? finals.reduce((b, w) => (w.total < b.total ? w : b)) : null;
+    res.absences = withData.reduce((s, w) => s + w.absent, 0);
+    res.lates = withData.reduce((s, w) => s + w.late, 0);
+    res.excused = withData.reduce((s, w) => s + w.excused, 0);
+    if (!cur) return res;
+
+    const lost = CRITERIA.filter((c) => cur.crit[c].std !== null).map((c) => ({ c, lost: round2(cur.crit[c].stdMax - cur.crit[c].std), std: cur.crit[c].std, max: cur.crit[c].stdMax }));
+    lost.sort((a, b) => b.lost - a.lost);
+    if (lost.length && lost[0].lost > 0.5) res.weakest = lost[0];
+    const strong = lost.slice().sort((a, b) => a.lost - b.lost)[0];
+    if (strong) res.strongest = strong;
+    if (prev && cur.total !== null && prev.total !== null) res.delta = round2(cur.total - prev.total);
+
+    // per-criterion change vs previous week
+    res.critDelta = {};
+    if (prev) for (const c of CRITERIA) if (cur.crit[c].std !== null && prev.crit[c].std !== null) res.critDelta[c] = round2(cur.crit[c].std - prev.crit[c].std);
+
+    // repeated decline: total fell in each of the last two comparisons
+    const tail = withData.slice(Math.max(0, idx - 2), idx + 1).filter((w) => w.total !== null);
+    res.decliningStreak = tail.length === 3 && tail[2].total < tail[1].total && tail[1].total < tail[0].total;
+    // same criterion weak two weeks in a row
+    res.repeatWeak = [];
+    if (prev) for (const c of CRITERIA) {
+      const a = cur.crit[c].std, b = prev.crit[c].std;
+      if (a !== null && b !== null && a / cur.crit[c].stdMax * 20 < th.criterionWeak && b / prev.crit[c].stdMax * 20 < th.criterionWeak) res.repeatWeak.push(c);
+    }
+    // absences in the recent window
+    const win = withData.slice(Math.max(0, idx - th.absenceWindowWeeks + 1), idx + 1);
+    res.recentAbsences = win.reduce((s, w) => s + w.absent, 0);
+
+    if (cur.total !== null && cur.total < th.critical) res.alerts.push({ level: 'critical', code: 'critical', text: `الدرجة ${fmt(cur.total)}/60 أقل من حد المتابعة العاجلة (${th.critical})` });
+    else if (cur.total !== null && cur.total < th.weekLow) res.alerts.push({ level: 'warn', code: 'low', text: `الدرجة ${fmt(cur.total)}/60 أقل من الحد المقبول (${th.weekLow})` });
+    if (res.recentAbsences >= th.absenceRepeat) res.alerts.push({ level: res.recentAbsences >= th.absenceRepeat + 1 ? 'critical' : 'warn', code: 'absence', text: `غاب ${res.recentAbsences === 2 ? 'يومين' : res.recentAbsences + ' أيام'} خلال آخر ${win.length} أسابيع مرصودة` });
+    if (res.decliningStreak) res.alerts.push({ level: 'warn', code: 'decline', text: 'تراجعت درجته أسبوعين متتاليين' });
+    for (const c of res.repeatWeak) res.alerts.push({ level: 'warn', code: 'repeatWeak', text: `${CRIT_LABEL[c]} ضعيف أسبوعين متتاليين` });
+    if (res.delta !== null && res.delta <= -th.changeNotable) res.alerts.push({ level: 'warn', code: 'drop', text: `انخفضت درجته ${fmt(-res.delta)} نقطة عن الأسبوع السابق` });
+    if (res.delta !== null && res.delta >= th.changeNotable) res.alerts.push({ level: 'good', code: 'improve', text: `تحسّن ${fmt(res.delta)} نقطة عن الأسبوع السابق` });
+    res.needsFollowUp = res.alerts.some((a) => a.level === 'critical' || a.level === 'warn');
+    res.urgent = res.alerts.some((a) => a.level === 'critical');
+    return res;
+  }
+
+  function fmt(x) { if (x === null || x === undefined || isNaN(x)) return '—'; const r = Math.round(x * 10) / 10; return (Number.isInteger(r) ? String(r) : r.toFixed(1)); }
+
+  /* Plain-language analysis built only from computed facts. */
+  function narrative(name, a, settings) {
+    const th = settings.thresholds;
+    const w = a.cur;
+    if (!w) return { summary: `لا توجد بيانات مرصودة لـ${name} في الفترة المحددة.`, recommendation: '' };
+    const parts = [];
+    const lv = {}; for (const c of CRITERIA) lv[c] = levelOf(w.crit[c].std, w.crit[c].stdMax, th);
+    const good = CRITERIA.filter((c) => w.crit[c].std !== null && ['excellent', 'vgood'].includes(lv[c].key)).map((c) => CRIT_LABEL[c]);
+    if (good.length) parts.push(`الطالب منتظم في ${joinAr(good)}`);
+    if (a.weakest && a.weakest.lost >= 2) {
+      parts.push(`${good.length ? 'لكن ' : ''}أبرز جوانب القصور لديه ${a.weakest.c === 'att' ? 'الحضور' : a.weakest.c === 'hifz' ? 'الحفظ' : 'المراجعة أو التثبيت'}؛ إذ فقد ${fmt(a.weakest.lost)} نقطة من أصل ${a.weakest.max} في هذا المعيار`);
+    } else if (w.total !== null) {
+      parts.push('لم يفقد نقاطًا تُذكر في أي معيار');
+    }
+    if (a.delta !== null) parts.push(a.delta > 0 ? `وارتفعت درجته ${fmt(a.delta)} نقطة عن أسبوعه السابق` : a.delta < 0 ? `وانخفضت درجته ${fmt(-a.delta)} نقطة عن أسبوعه السابق` : 'ودرجته مساوية لأسبوعه السابق');
+    if (!w.complete) parts.push('(الأسبوع لم يكتمل رصده بعد، فالدرجة مؤقتة)');
+    let rec = '';
+    if (a.weakest && a.weakest.lost >= 2) {
+      const c = a.weakest.c;
+      rec = c === 'att' ? 'التواصل مع ولي الأمر بشأن الغياب ومتابعة انتظام الحضور في الأسبوع القادم.'
+        : c === 'hifz' ? 'متابعة مقدار الحفظ اليومي المطلوب والتأكد من تسميعه كاملًا في الأسبوع القادم.'
+          : 'تكثيف المراجعة والتثبيت في الأسبوع القادم ومتابعة تحسن مستواه فيهما.';
+    } else if (w.total !== null) rec = 'المحافظة على المستوى الحالي.';
+    if (a.recentAbsences >= th.absenceRepeat && !(a.weakest && a.weakest.c === 'att')) rec += ' مع متابعة تكرار الغياب.';
+    return { summary: parts.join('، ') + '.', recommendation: rec.trim() };
+  }
+  function joinAr(arr) { return arr.length <= 1 ? (arr[0] || '') : arr.slice(0, -1).join(' و') + ' و' + arr[arr.length - 1]; }
+
+  /* ---------- aggregation helpers ---------- */
+  function mean(xs) { const v = xs.filter((x) => x !== null && x !== undefined && !isNaN(x)); return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null; }
+
+  function groupStats(scoredWeeks) {
+    const withT = scoredWeeks.filter((w) => w && w.total !== null);
+    const att = scoredWeeks.filter((w) => w && w.attendanceRate !== null);
+    return {
+      n: withT.length,
+      avgTotal: mean(withT.map((w) => w.total)),
+      avgAtt: mean(withT.map((w) => w.crit.att.std)),
+      avgHifz: mean(withT.map((w) => w.crit.hifz.std)),
+      avgRev: mean(withT.map((w) => w.crit.rev.std)),
+      attendanceRate: mean(att.map((w) => w.attendanceRate)),
+      points: withT.reduce((s, w) => s + w.actualEarned, 0)
+    };
+  }
+
+  const api = { DAY_NAMES, CRITERIA, CRIT_LABEL, STATUS_LABEL, DEFAULT_SETTINGS, mergeSettings, parseDate, addDays, weekday, weekStartOf, riyadhToday, classifyStatus, entryKind, scoreDay, scoreWeek, levelOf, totalLevel, analyzeStudent, narrative, mean, groupStats, fmt, round2 };
+  if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.Engine = api;
+})(typeof globalThis !== 'undefined' ? globalThis : this);
+
+</script>
+<script>
+/* لوحة متابعة طلاب نمو — application */
+(function () {
+  'use strict';
+  const E = window.Engine;
+  const ART_URL = 'https://claude.ai/artifact/3NVk1ShFaXm6B9eBnNjN7b';
+  const REMOTE = 'Claude Code Remote';
+  const $ = (s, el) => (el || document).querySelector(s);
+  const $$ = (s, el) => Array.from((el || document).querySelectorAll(s));
+  const esc = (s) => String(s === null || s === undefined ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const F = E.fmt;
+  const bd = (x) => `<bdi>${esc(x)}</bdi>`;
+  const qtxt = (t) => String(t || '').replace(/[\u06D6-\u06ED]/g, '');
+
+  /* ---------------- state ---------------- */
+  const st = {
+    db: null, user: null, mcp: null, dl: null, sample: null, canEdit: false, myId: null,
+    roster: null, settingsDoc: null, S: E.mergeSettings(null), sync: null,
+    weeks: new Map(), notes: new Map(), overrides: new Map(), audit: [],
+    loaded: { roster: false, settings: false, weeks: false, sync: false },
+    dbState: 'connecting',
+    ui: {
+      view: 'overview', mode: 'all', modeVal: '', week: null, q: '', sort: { key: 'total', dir: -1 }, student: null, semester: 'current',
+      report: { type: 'weekly', week: null, date: null, month: null, upto: null, scope: 'all', scopeVal: '' }
+    },
+    syncRequestedAt: null,
+    static: !!window.NUMOW_STATIC_MODE
+  };
+  let cache = null; // derived, rebuilt when data/settings change
+
+  /* ---------------- dates ---------------- */
+  const hijriFmt = (() => { try { return new Intl.DateTimeFormat('ar-SA-u-ca-islamic-umalqura-nu-latn', { day: 'numeric', month: 'long', year: 'numeric' }); } catch (e) { return null; } })();
+  const hijriShort = (() => { try { return new Intl.DateTimeFormat('ar-SA-u-ca-islamic-umalqura-nu-latn', { day: 'numeric', month: 'long' }); } catch (e) { return null; } })();
+  const gregFmt = new Intl.DateTimeFormat('ar-u-nu-latn', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
+  const gregShort = new Intl.DateTimeFormat('ar-u-nu-latn', { day: 'numeric', month: 'short', timeZone: 'UTC' });
+  const timeFmt = new Intl.DateTimeFormat('ar-u-nu-latn', { hour: 'numeric', minute: '2-digit', day: 'numeric', month: 'short', timeZone: 'Asia/Riyadh' });
+  const monthFmt = new Intl.DateTimeFormat('ar-u-nu-latn', { month: 'long', year: 'numeric', timeZone: 'UTC' });
+  const asDate = (g) => E.parseDate(g);
+  const hijri = (g, short) => { const f = short ? hijriShort : hijriFmt; if (!f) return ''; try { return f.format(new Date(asDate(g).getTime() + 12 * 3600e3)); } catch (e) { return ''; } };
+  const greg = (g, short) => (short ? gregShort : gregFmt).format(asDate(g));
+  const today = () => E.riyadhToday();
+  function ago(iso) {
+    if (!iso) return '—';
+    const ms = Date.now() - new Date(iso).getTime();
+    const m = Math.round(ms / 60000);
+    if (m < 1) return 'الآن';
+    if (m < 60) return `قبل ${m} دقيقة`;
+    const h = Math.round(m / 60);
+    if (h < 24) return `قبل ${h} ${h === 1 ? 'ساعة' : h === 2 ? 'ساعتين' : 'ساعات'}`;
+    const d = Math.round(h / 24);
+    return `قبل ${d} ${d === 1 ? 'يوم' : d === 2 ? 'يومين' : 'أيام'}`;
+  }
+  function weekNo(ws) { const s = st.S.semester.start; return Math.floor((asDate(ws) - asDate(E.weekStartOf(s))) / (7 * 864e5)) + 1; }
+  function weekLabel(ws, long) {
+    const n = weekNo(ws);
+    const end = E.addDays(ws, 3);
+    const base = `الأسبوع ${n}`;
+    return long ? `${base} · ${greg(ws, true)} – ${greg(end, true)} · ${hijri(ws, true)}` : `${base} (${greg(ws, true)})`;
+  }
+
+  /* ---------------- derived data ---------------- */
+  function students(all) {
+    const list = (st.roster && st.roster.students) || [];
+    return all ? list : list.filter((s) => s.active !== false);
+  }
+  function semesterRange() {
+    if (st.ui.semester !== 'current') {
+      const a = (st.S.archive || [])[Number(st.ui.semester)];
+      if (a) return { start: E.weekStartOf(a.start), end: a.end || '9999-12-31', name: a.name };
+    }
+    return { start: E.weekStartOf(st.S.semester.start), end: '9999-12-31', name: st.S.semester.name };
+  }
+  function overridesMap() { const o = {}; st.overrides.forEach((v, k) => { o[k] = v; }); return o; }
+
+  function rebuild() {
+    const S = st.S;
+    const range = semesterRange();
+    const ov = overridesMap();
+    const t = today();
+    const bySid = new Map();
+    const weekSet = new Set();
+    st.weeks.forEach((doc) => {
+      if (!doc || !doc.sid || !doc.weekStart) return;
+      if (doc.weekStart < range.start || doc.weekStart > range.end) return;
+      let w;
+      try { w = E.scoreWeek(doc, S, { today: t, overrides: ov }); } catch (e) { console.error(e); return; }
+      if (!bySid.has(doc.sid)) bySid.set(doc.sid, []);
+      bySid.get(doc.sid).push(w);
+      weekSet.add(doc.weekStart);
+    });
+    bySid.forEach((arr) => arr.sort((a, b) => (a.weekStart < b.weekStart ? -1 : 1)));
+    const weeks = Array.from(weekSet).sort().reverse();
+    const act = students();
+    // default week: newest week where at least half the students have recorded data
+    let def = null;
+    for (const ws of weeks) {
+      const n = act.filter((s) => { const w = (bySid.get(s.id) || []).find((x) => x.weekStart === ws); return w && w.hasData; }).length;
+      if (n >= Math.ceil(act.length / 2)) { def = ws; break; }
+    }
+    if (!def) def = weeks[0] || null;
+    cache = { bySid, weeks, defaultWeek: def, range, today: t };
+  }
+  function wk(sid, ws) { return ((cache && cache.bySid.get(sid)) || []).find((w) => w.weekStart === ws) || null; }
+  function histOf(sid) { return (cache && cache.bySid.get(sid)) || []; }
+  function selWeek() { return st.ui.week && cache.weeks.includes(st.ui.week) ? st.ui.week : cache.defaultWeek; }
+  function prevWeekOf(sid, ws) { const h = histOf(sid).filter((w) => w.hasData && w.weekStart < ws); return h.length ? h[h.length - 1] : null; }
+  function analysisFor(sid, ws) { return E.analyzeStudent(histOf(sid).filter((w) => w.weekStart <= ws), st.S, ws); }
+
+  function filtered(list) {
+    list = list || students();
+    const { mode, modeVal, q } = st.ui;
+    if (mode === 'halaqa' && modeVal) list = list.filter((s) => s.halaqa === modeVal);
+    if (mode === 'group' && modeVal) list = list.filter((s) => s.group === modeVal);
+    if (q) { const n = norm(q); list = list.filter((s) => norm(s.name).includes(n)); }
+    return list;
+  }
+  function norm(s) { return String(s || '').replace(/[أإآ]/g, 'ا').replace(/ة/g, 'ه').replace(/ى/g, 'ي').replace(/\s+/g, ' ').trim(); }
+
+  function rowsFor(list, ws) {
+    return list.map((s) => {
+      const w = wk(s.id, ws);
+      const a = w && w.hasData ? analysisFor(s.id, ws) : null;
+      return { s, w, a, total: w && w.hasData ? w.total : null };
+    });
+  }
+
+  /* ---------------- formatting helpers ---------------- */
+  function cls20(v, max) { if (v === null || v === undefined) return ''; const x = v / (max || 20) * 20; const th = st.S.thresholds; return x >= th.criterionGood ? '' : x >= th.criterionWeak ? 'warn' : 'bad'; }
+  function clsTotal(t) { if (t === null || t === undefined) return ''; const th = st.S.thresholds; return t >= th.weekLow ? 'good' : t >= th.critical ? 'warn' : 'bad'; }
+  function cellBar(v, max) {
+    if (v === null || v === undefined) return '<span class="muted">—</span>';
+    const p = Math.max(0, Math.min(100, v / max * 100));
+    return `<span class="cell-bar"><span class="num">${F(v)}</span><span class="minibar" aria-hidden="true"><i class="${cls20(v, max)}" style="width:${p}%"></i></span></span>`;
+  }
+  function deltaHtml(d) {
+    if (d === null || d === undefined) return '<span class="delta flat">—</span>';
+    if (Math.abs(d) < 0.05) return '<span class="delta flat">= 0</span>';
+    return d > 0 ? `<span class="delta up" title="ارتفاع عن الأسبوع السابق">▲ ${F(d)}</span>` : `<span class="delta down" title="انخفاض عن الأسبوع السابق">▼ ${F(-d)}</span>`;
+  }
+  function weekStateChip(w) {
+    if (!w || !w.hasData) return '<span class="chip info">لا بيانات</span>';
+    return w.complete ? '<span class="chip acc" title="اكتمل رصد جميع أيام الأسبوع">نهائي</span>' : `<span class="chip info" title="لم يكتمل رصد ${w.pending} من أيام الأسبوع">مؤقت</span>`;
+  }
+  function levelChip(lv) {
+    const map = { excellent: 'good', vgood: 'good', good: 'warn', weak: 'bad', critical: 'bad', na: 'info' };
+    const ico = { excellent: '●', vgood: '●', good: '◆', weak: '▲', critical: '▲', na: '○' };
+    return `<span class="chip ${map[lv.key] || 'info'}"><span class="ico" aria-hidden="true">${ico[lv.key] || ''}</span>${esc(lv.label)}</span>`;
+  }
+  const alertChip = (a) => `<span class="chip ${a.level === 'critical' ? 'bad' : a.level === 'good' ? 'good' : 'warn'}"><span class="ico" aria-hidden="true">${a.level === 'good' ? '▲' : '!'}</span>${a.level === 'critical' ? 'عاجل' : a.level === 'good' ? 'تحسن' : 'متابعة'}</span>`;
+  function studentLink(s, sub) { return `<button type="button" data-open-student="${esc(s.id)}">${esc(s.name)}</button>${sub ? `<small>${esc(sub)}</small>` : ''}`; }
+
+  /* ---------------- toast / dialog ---------------- */
+  let toastTimer = null;
+  function toast(msg, ms) {
+    let t = $('#toast');
+    if (!t) { t = document.createElement('div'); t.id = 'toast'; t.className = 'toast'; t.setAttribute('role', 'status'); document.body.appendChild(t); }
+    t.textContent = msg; t.hidden = false;
+    clearTimeout(toastTimer); toastTimer = setTimeout(() => { t.hidden = true; }, ms || 3500);
+  }
+  function dialog(html, onMount) {
+    const ov = document.createElement('div'); ov.className = 'overlay';
+    ov.innerHTML = `<div class="dialog" role="dialog" aria-modal="true">${html}</div>`;
+    document.body.appendChild(ov);
+    const close = () => ov.remove();
+    ov.addEventListener('click', (e) => { if (e.target === ov || e.target.closest('[data-close]')) close(); });
+    document.addEventListener('keydown', function k(e) { if (e.key === 'Escape') { close(); document.removeEventListener('keydown', k); } });
+    if (onMount) onMount(ov.firstElementChild, close);
+    return close;
+  }
+  async function copyText(text, btn) {
+    try { await navigator.clipboard.writeText(text); toast('نُسخ النص'); }
+    catch (e) {
+      const pre = btn && btn.closest('.dialog') ? btn.closest('.dialog').querySelector('.wa') : null;
+      if (pre) { const r = document.createRange(); r.selectNodeContents(pre); const s = getSelection(); s.removeAllRanges(); s.addRange(r); }
+      toast('حدّدتُ النص، انسخه يدويًا');
+    }
+  }
+
+  /* ---------------- writes & audit ---------------- */
+  async function audit(action, target, before, after, reason) {
+    if (!st.db) return;
+    try {
+      await st.db.collection('audit').add({ at: new Date().toISOString(), by: st.myId || null, action, target, before: before === undefined ? null : before, after: after === undefined ? null : after, reason: reason || null });
+    } catch (e) { console.warn('audit failed', e); }
+  }
+  async function writeDoc(path, data, label) {
+    try { await st.db.doc(path).set(data); return true; }
+    catch (e) {
+      toast(e && e.code === 'invalid_argument' ? 'ليست لديك صلاحية التعديل على هذه اللوحة' : e && e.code === 'quota_exceeded' ? 'امتلأت سعة قاعدة البيانات' : 'تعذّر الحفظ، حاول مرة أخرى');
+      console.error(label, e); return false;
+    }
+  }
+
+  /* ---------------- sync (scheduled task) ---------------- */
+  function syncInfo() {
+    const s = st.sync || {};
+    const last = s.lastSuccessAt || null;
+    const ageH = last ? (Date.now() - new Date(last).getTime()) / 3600e3 : Infinity;
+    let kind = 'good', text = 'متزامن';
+    if (!last) { kind = 'warn'; text = 'لم تكتمل أول مزامنة'; }
+    else if (s.status === 'failed') { kind = 'bad'; text = 'تعذّرت آخر مزامنة'; }
+    else if (s.status === 'partial') { kind = 'warn'; text = 'مزامنة جزئية'; }
+    else if (ageH > 36) { kind = 'warn'; text = 'البيانات قديمة'; }
+    return { kind, text, last, s };
+  }
+  async function syncNow(btn) {
+    const tid = st.S.sync && st.S.sync.triggerId;
+    if (!st.mcp || !tid) { toast('التحديث الفوري غير متاح في هذا العرض'); return; }
+    btn.disabled = true; btn.textContent = 'جارٍ الطلب…';
+    try {
+      await st.mcp.callTool(REMOTE, 'fire_trigger', { trigger_id: tid, text: 'trigger: manual — طلب تحديث من زر «تحديث الآن» في اللوحة.' }, { cache: false });
+      st.syncRequestedAt = Date.now();
+      toast('بدأ التحديث من منصة خليل، تظهر البيانات هنا تلقائيًا خلال دقائق', 6000);
+      try { await st.db.doc('meta/sync').update({ requestedAt: new Date().toISOString() }); } catch (e) { /* not critical */ }
+    } catch (e) {
+      const msg = { not_in_manifest: 'لم يُسمح لهذه الصفحة باستخدام الموصّل', server_not_connected: 'موصّل Claude Code Remote غير متصل في حسابك', approval_required: 'يحتاج التحديث إلى موافقتك', needs_reauth: 'أعد ربط موصّل Claude Code Remote من الإعدادات' }[e && e.code];
+      toast(msg || 'تعذّر بدء التحديث: ' + ((e && e.message) || ''), 6000);
+    } finally {
+      setTimeout(() => { btn.disabled = false; btn.textContent = 'تحديث الآن'; }, 90000);
+      btn.textContent = 'طُلب التحديث';
+    }
+  }
+
+  /* ---------------- header ---------------- */
+  function renderHeader() {
+    const t = today();
+    $('#dates').textContent = `${hijri(t)} · ${greg(t)}`;
+    if (st.static) {
+      const ex = window.NUMOW_EXPORTED_AT;
+      $('#syncbox').innerHTML = `<span class="chip acc">نسخة للعرض</span><span class="small muted">آخر تحديث للبيانات: ${ex ? `<span title="${esc(timeFmt.format(new Date(ex)))}">${ago(ex)}</span>` : '—'}</span><button class="btn small" type="button" id="lockNow">قفل</button>`;
+      $('#lockNow').addEventListener('click', () => { try { sessionStorage.removeItem('numow-key'); } catch (e) { } location.reload(); });
+      return;
+    }
+    const si = syncInfo();
+    const errs = (si.s.errors || []).length;
+    $('#syncbox').innerHTML = `
+      <span class="chip ${si.kind}" title="${esc(si.s.status === 'failed' ? (si.s.errors && si.s.errors[0] && si.s.errors[0].message) || '' : '')}"><span class="ico" aria-hidden="true">${si.kind === 'good' ? '●' : '!'}</span>${si.text}</span>
+      <span class="small muted">آخر مزامنة ناجحة: ${si.last ? `<span title="${esc(timeFmt.format(new Date(si.last)))}">${ago(si.last)}</span>` : '—'}${errs ? ` · ${errs} خطأ` : ''}</span>
+      <button class="btn primary small" id="syncNow" type="button">تحديث الآن</button>`;
+    $('#syncNow').addEventListener('click', (e) => syncNow(e.currentTarget));
+  }
+
+  /* ---------------- filters ---------------- */
+  function filterBar(opts) {
+    opts = opts || {};
+    const r = st.roster || { halaqat: [], groups: [] };
+    const ws = selWeek();
+    const modeOpts = st.ui.mode === 'halaqa' ? r.halaqat : st.ui.mode === 'group' ? r.groups : [];
+    const sems = [{ v: 'current', l: st.S.semester.name }].concat((st.S.archive || []).map((a, i) => ({ v: String(i), l: a.name + ' (أرشيف)' })));
+    return `<div class="filters">
+      <div class="field"><label>طريقة العرض</label>
+        <div class="seg" role="group" aria-label="طريقة العرض">
+          <button type="button" data-mode="all" aria-pressed="${st.ui.mode === 'all'}">جميع الطلاب</button>
+          <button type="button" data-mode="halaqa" aria-pressed="${st.ui.mode === 'halaqa'}">حسب الحلقة</button>
+          <button type="button" data-mode="group" aria-pressed="${st.ui.mode === 'group'}">حسب مجموعة نمو</button>
+        </div></div>
+      ${st.ui.mode !== 'all' ? `<div class="field"><label for="modeVal">${st.ui.mode === 'halaqa' ? 'الحلقة' : 'المجموعة'}</label>
+        <select id="modeVal"><option value="">الكل (مقسّمة)</option>${modeOpts.map((x) => `<option ${x === st.ui.modeVal ? 'selected' : ''}>${esc(x)}</option>`).join('')}</select></div>` : ''}
+      ${opts.week !== false ? `<div class="field"><label for="weekSel">الأسبوع</label>
+        <select id="weekSel">${cache.weeks.map((w) => `<option value="${w}" ${w === ws ? 'selected' : ''}>${esc(weekLabel(w))}</option>`).join('')}</select></div>` : ''}
+      ${opts.search !== false ? `<div class="field"><label for="q">بحث بالاسم</label><input id="q" type="search" placeholder="اكتب اسم الطالب" value="${esc(st.ui.q)}" autocomplete="off"></div>` : ''}
+      ${sems.length > 1 ? `<div class="field"><label for="semSel">الفصل</label><select id="semSel">${sems.map((s) => `<option value="${s.v}" ${s.v === st.ui.semester ? 'selected' : ''}>${esc(s.l)}</option>`).join('')}</select></div>` : ''}
+    </div>`;
+  }
+  function bindFilters(root) {
+    $$('[data-mode]', root).forEach((b) => b.addEventListener('click', () => { st.ui.mode = b.dataset.mode; st.ui.modeVal = ''; render(); }));
+    const mv = $('#modeVal', root); if (mv) mv.addEventListener('change', () => { st.ui.modeVal = mv.value; render(); });
+    const wsel = $('#weekSel', root); if (wsel) wsel.addEventListener('change', () => { st.ui.week = wsel.value; render(); });
+    const sem = $('#semSel', root); if (sem) sem.addEventListener('change', () => { st.ui.semester = sem.value; st.ui.week = null; rebuild(); render(); });
+    const q = $('#q', root);
+    if (q) {
+      let t; q.addEventListener('input', () => { clearTimeout(t); t = setTimeout(() => { st.ui.q = q.value; const pos = q.selectionStart; render(); const nq = $('#q'); if (nq) { nq.focus(); try { nq.setSelectionRange(pos, pos); } catch (e) { } } }, 200); });
+    }
+  }
+
+  /* ---------------- main table ---------------- */
+  function mainTable(rows, opts) {
+    opts = opts || {};
+    const sortKey = st.ui.sort.key, dir = st.ui.sort.dir;
+    const val = (r, k) => k === 'name' ? r.s.name : k === 'halaqa' ? r.s.halaqa : k === 'group' ? r.s.group : k === 'total' ? r.total : r.w && r.w.hasData ? r.w.crit[k].std : null;
+    rows = rows.slice().sort((a, b) => {
+      const x = val(a, sortKey), y = val(b, sortKey);
+      if (x === null && y === null) return a.s.name.localeCompare(b.s.name, 'ar');
+      if (x === null) return 1; if (y === null) return -1;
+      return (typeof x === 'string' ? x.localeCompare(y, 'ar') : x - y) * dir;
+    });
+    const th = (k, l) => `<th class="sortable" data-sort="${k}" scope="col" aria-sort="${sortKey === k ? (dir > 0 ? 'ascending' : 'descending') : 'none'}">${l}${sortKey === k ? `<span class="arr" aria-hidden="true">${dir > 0 ? '▲' : '▼'}</span>` : ''}</th>`;
+    const body = (list) => list.map((r) => {
+      const w = r.w;
+      const d = r.a ? r.a.delta : null;
+      return `<tr class="click" data-open-student="${esc(r.s.id)}" tabindex="0">
+        <td class="name">${esc(r.s.name)}</td><td>${esc(r.s.halaqa)}</td><td>${esc((r.s.group || '').replace('مجموعة ', ''))}</td>
+        <td class="n">${cellBar(w && w.hasData ? w.crit.att.std : null, 20)}</td>
+        <td class="n">${cellBar(w && w.hasData ? w.crit.hifz.std : null, 20)}</td>
+        <td class="n">${cellBar(w && w.hasData ? w.crit.rev.std : null, 20)}</td>
+        <td class="n"><span class="tot ${clsTotal(r.total)}">${r.total === null ? '—' : F(r.total)}</span></td>
+        <td class="n">${deltaHtml(d)}</td>
+        <td class="n">${weekStateChip(w)}</td></tr>`;
+    }).join('');
+    const foot = (list, label) => {
+      const ws = list.map((r) => r.w).filter((w) => w && w.hasData);
+      const g = E.groupStats(ws);
+      return `<tr class="foot"><td colspan="3">${esc(label)} (${g.n} من ${list.length})</td><td class="n">${F(g.avgAtt)}</td><td class="n">${F(g.avgHifz)}</td><td class="n">${F(g.avgRev)}</td><td class="n">${F(g.avgTotal)}</td><td></td><td></td></tr>`;
+    };
+    let tbody = '';
+    const r = st.roster || {};
+    if (opts.grouped && st.ui.mode !== 'all' && !st.ui.modeVal) {
+      const keys = st.ui.mode === 'halaqa' ? r.halaqat : r.groups;
+      for (const k of keys || []) {
+        const part = rows.filter((x) => (st.ui.mode === 'halaqa' ? x.s.halaqa : x.s.group) === k);
+        if (!part.length) continue;
+        tbody += `<tr class="grouphead"><td colspan="9">${esc(k)} · ${part.length} طلاب</td></tr>` + body(part) + foot(part, 'متوسط ' + k);
+      }
+    } else {
+      tbody = body(rows) + (rows.length ? foot(rows, 'المتوسط') : '');
+    }
+    return `<div class="tablewrap"><table>
+      <thead><tr>${th('name', 'الطالب')}${th('halaqa', 'الحلقة')}${th('group', 'مجموعة نمو')}${th('att', 'الحضور /20')}${th('hifz', 'الحفظ /20')}${th('rev', 'المراجعة أو التثبيت /20')}${th('total', 'الإجمالي /60')}<th scope="col">عن السابق</th><th scope="col">الحالة</th></tr></thead>
+      <tbody>${tbody || '<tr><td colspan="9" class="empty">لا يوجد طلاب مطابقون</td></tr>'}</tbody></table></div>`;
+  }
+  function bindTable(root) {
+    $$('th[data-sort]', root).forEach((h) => h.addEventListener('click', () => {
+      const k = h.dataset.sort;
+      if (st.ui.sort.key === k) st.ui.sort.dir *= -1; else { st.ui.sort.key = k; st.ui.sort.dir = (k === 'name' || k === 'halaqa' || k === 'group') ? 1 : -1; }
+      render();
+    }));
+  }
+
+  /* ---------------- charts ---------------- */
+  const charts = [];
+  function css(v) { return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
+  function killCharts() { while (charts.length) { try { charts.pop().destroy(); } catch (e) { } } }
+  function makeChart(el, cfg) {
+    if (!window.Chart || !el) return null;
+    const fg = css('--muted'), grid = css('--grid');
+    Chart.defaults.font.family = getComputedStyle(document.body).fontFamily;
+    Chart.defaults.color = fg;
+    cfg.options = cfg.options || {};
+    cfg.options.maintainAspectRatio = false;
+    cfg.options.animation = matchMedia('(prefers-reduced-motion: reduce)').matches ? false : { duration: 250 };
+    cfg.options.plugins = Object.assign({ legend: { display: false }, tooltip: { rtl: true, textDirection: 'rtl', backgroundColor: css('--fg'), titleColor: css('--bg'), bodyColor: css('--bg'), padding: 10, cornerRadius: 8 } }, cfg.options.plugins || {});
+    const sc = cfg.options.scales || {};
+    for (const k of Object.keys(sc)) { sc[k].grid = Object.assign({ color: grid, drawTicks: false }, sc[k].grid || {}); sc[k].border = { display: false }; sc[k].ticks = Object.assign({ color: fg, padding: 6 }, sc[k].ticks || {}); }
+    const c = new Chart(el, cfg); charts.push(c); return c;
+  }
+  const SER = () => [css('--s1'), css('--s2'), css('--s3')];
+  function legendHtml(items) { return `<div class="legend">${items.map((x) => `<span><i style="background:${x.c}"></i>${esc(x.l)}</span>`).join('')}</div>`; }
+
+  /* ---------------- views: overview ---------------- */
+  function todayStats(list) {
+    const t = today();
+    // most recent study day on or before today
+    let day = t;
+    for (let i = 0; i < 7; i++) { if (st.S.studyDays.includes(E.weekday(day)) && !(st.S.holidays || []).includes(day)) break; day = E.addDays(day, -1); }
+    const ws = E.weekStartOf(day);
+    const c = { present: 0, absent: 0, late: 0, excused: 0, pending: 0, holiday: 0, total: list.length };
+    for (const s of list) {
+      const w = wk(s.id, ws);
+      const d = w && w.days.find((x) => x.g === day);
+      const k = d ? d.status : 'pending';
+      if (k === 'present') c.present++; else if (k === 'late') { c.late++; c.present++; } else if (k === 'absent') c.absent++; else if (k === 'excused') c.excused++; else if (k === 'holiday' || k === 'notStudy') c.holiday++; else c.pending++;
+    }
+    c.day = day; c.isToday = day === t;
+    c.rate = (c.present + c.absent) > 0 ? c.present / (c.present + c.absent) : null;
+    return c;
+  }
+
+  function viewOverview(root) {
+    const ws = selWeek();
+    const list = filtered();
+    const rows = rowsFor(list, ws);
+    const withData = rows.filter((r) => r.w && r.w.hasData);
+    const g = E.groupStats(withData.map((r) => r.w));
+    const td = todayStats(list);
+    const complete = withData.filter((r) => r.w.complete).length;
+    const follow = rows.filter((r) => r.a && r.a.needsFollowUp);
+    const ranked = withData.filter((r) => r.total !== null).sort((a, b) => b.total - a.total);
+    const improved = rows.filter((r) => r.a && r.a.delta !== null && r.a.delta > 0.05).sort((a, b) => b.a.delta - a.a.delta);
+    const declined = rows.filter((r) => r.a && r.a.delta !== null && r.a.delta < -0.05).sort((a, b) => a.a.delta - b.a.delta);
+    const noData = rows.filter((r) => !r.w || !r.w.hasData);
+    const weekAttRate = E.mean(withData.map((r) => r.w.attendanceRate));
+
+    const rankList = (arr, fn) => arr.length ? `<ol class="rank">${arr.map((r, i) => `<li><span class="i">${i + 1}</span><span class="nm">${studentLink(r.s, r.s.halaqa + ' · ' + (r.s.group || '').replace('مجموعة ', ''))}</span><span class="val">${fn(r)}</span></li>`).join('')}</ol>` : '<p class="empty">لا يوجد</p>';
+
+    root.innerHTML = `
+      ${filterBar()}
+      ${banners()}
+      <div class="section-title"><h2>${esc(weekLabel(ws, true))}</h2><span class="sub">${complete} نهائي · ${withData.length - complete} مؤقت · ${noData.length} بلا بيانات</span></div>
+      <div class="kpis">
+        <div class="kpi"><div class="l">إجمالي الطلاب</div><div class="v">${list.length}</div><div class="s">${st.ui.mode === 'all' || !st.ui.modeVal ? 'جميع الحلقات' : esc(st.ui.modeVal)}</div></div>
+        <div class="kpi"><div class="l">${td.isToday ? 'اليوم' : 'آخر يوم حلقة'} · ${esc(E.DAY_NAMES[E.weekday(td.day)])}</div><div class="v">${td.present}<small> حاضر</small> · ${td.absent}<small> غائب</small></div><div class="s">${td.pending ? `${td.pending} لم تُرصد بعد` : 'اكتمل الرصد'}${td.late ? ` · ${td.late} متأخر` : ''}${td.holiday ? ` · ${td.holiday} إجازة` : ''}</div></div>
+        <div class="kpi"><div class="l">نسبة الحضور</div><div class="v">${td.rate === null ? '—' : bd(Math.round(td.rate * 100) + '%')}<small> يومية</small></div><div class="s">الأسبوعية: ${weekAttRate === null ? '—' : bd(Math.round(weekAttRate * 100) + '%')}</div></div>
+        <div class="kpi"><div class="l">متوسط الدرجات</div><div class="v">${F(g.avgTotal)}<small> /60</small></div><div class="s">من ${g.n} طالبًا لديهم بيانات</div></div>
+        <div class="kpi"><div class="l">النقاط المكتسبة</div><div class="v">${F(g.points)}</div><div class="s">المجموع الفعلي للطلاب</div></div>
+        <div class="kpi"><div class="l">يحتاجون متابعة</div><div class="v" style="color:${follow.length ? 'var(--bad)' : 'var(--good)'}">${follow.length}</div><div class="s">${rows.filter((r) => r.a && r.a.urgent).length} منهم عاجل</div></div>
+      </div>
+
+      <div class="grid g2" style="margin-top:14px">
+        <div class="panel"><h3>أعلى خمسة طلاب أداءً <span class="hint">من 60</span></h3>${rankList(ranked.slice(0, 5), (r) => `<span class="tot ${clsTotal(r.total)}">${F(r.total)}</span>`)}</div>
+        <div class="panel"><h3>أقل خمسة طلاب أداءً <span class="hint">من 60</span></h3>${rankList(ranked.slice(-5).reverse(), (r) => `<span class="tot ${clsTotal(r.total)}">${F(r.total)}</span>`)}</div>
+        <div class="panel"><h3>تحسّنوا عن أسبوعهم السابق <span class="hint">${improved.length}</span></h3>${rankList(improved.slice(0, 6), (r) => deltaHtml(r.a.delta))}</div>
+        <div class="panel"><h3>تراجعوا عن أسبوعهم السابق <span class="hint">${declined.length}</span></h3>${rankList(declined.slice(0, 6), (r) => deltaHtml(r.a.delta))}</div>
+      </div>
+
+      <div class="panel" style="margin-top:14px"><h3>يحتاجون متابعة <button class="btn ghost small" data-goto="alerts" type="button">كل التنبيهات</button></h3>
+        ${follow.length ? `<ul class="alert-list">${follow.slice(0, 8).map((r) => `<li>${alertChip(r.a.alerts.find((x) => x.level !== 'good'))}<div><div class="who">${studentLink(r.s)}</div><div class="txt">${esc(r.a.alerts.filter((x) => x.level !== 'good').map((x) => x.text).join(' · '))}</div></div><span class="tot ${clsTotal(r.total)}">${F(r.total)}</span></li>`).join('')}</ul>` : '<p class="empty">لا يوجد طلاب تحت حدود التنبيه في هذا الأسبوع.</p>'}
+        ${noData.length ? `<p class="help" style="margin-top:10px">لم تُرصد بيانات هذا الأسبوع لـ: ${noData.map((r) => esc(r.s.name)).join('، ')}</p>` : ''}
+      </div>
+
+      <div class="grid g2" style="margin-top:14px">
+        <div class="panel"><h3>متوسط الأداء حسب الحلقة <span class="hint">من 20 لكل معيار</span></h3><div class="chartbox"><canvas id="chHalaqa" role="img" aria-label="متوسط المعايير حسب الحلقة"></canvas></div>${legendHtml([{ c: SER()[0], l: 'الحضور' }, { c: SER()[1], l: 'الحفظ' }, { c: SER()[2], l: 'المراجعة أو التثبيت' }])}</div>
+        <div class="panel"><h3>متوسط الأداء حسب مجموعة نمو <span class="hint">من 20 لكل معيار</span></h3><div class="chartbox"><canvas id="chGroup" role="img" aria-label="متوسط المعايير حسب مجموعة نمو"></canvas></div>${legendHtml([{ c: SER()[0], l: 'الحضور' }, { c: SER()[1], l: 'الحفظ' }, { c: SER()[2], l: 'المراجعة أو التثبيت' }])}</div>
+      </div>
+
+      <div class="section-title"><h2>جدول الطلاب</h2><span class="sub">اضغط على أي طالب لفتح ملفه</span></div>
+      ${mainTable(rows, { grouped: true })}
+      ${methodNote()}`;
+    bindFilters(root); bindTable(root);
+    entityChart($('#chHalaqa'), (st.roster || {}).halaqat || [], (s) => s.halaqa, ws);
+    entityChart($('#chGroup'), ((st.roster || {}).groups || []), (s) => s.group, ws, (x) => x.replace('مجموعة ', ''));
+  }
+  function entityChart(el, keys, keyFn, ws, short) {
+    const all = students();
+    const data = keys.map((k) => E.groupStats(all.filter((s) => keyFn(s) === k).map((s) => wk(s.id, ws)).filter((w) => w && w.hasData)));
+    const c = SER();
+    makeChart(el, {
+      type: 'bar',
+      data: { labels: keys.map((k) => (short ? short(k) : k)), datasets: [
+        { label: 'الحضور', data: data.map((d) => d.avgAtt === null ? null : E.round2(d.avgAtt)), backgroundColor: c[0], borderRadius: 4, maxBarThickness: 22 },
+        { label: 'الحفظ', data: data.map((d) => d.avgHifz === null ? null : E.round2(d.avgHifz)), backgroundColor: c[1], borderRadius: 4, maxBarThickness: 22 },
+        { label: 'المراجعة أو التثبيت', data: data.map((d) => d.avgRev === null ? null : E.round2(d.avgRev)), backgroundColor: c[2], borderRadius: 4, maxBarThickness: 22 }] },
+      options: { scales: { x: { grid: { display: false } }, y: { min: 0, max: 20, ticks: { stepSize: 5 } } }, plugins: { tooltip: { callbacks: { afterTitle: (it) => { const d = data[it[0].dataIndex]; return `${d.n} طالبًا · المتوسط ${F(d.avgTotal)}/60`; } } } }, datasets: { bar: { categoryPercentage: .7, barPercentage: .9 } } }
+    });
+  }
+
+  function banners() {
+    const out = [];
+    const si = syncInfo();
+    if (si.s.status === 'failed') out.push(`<div class="banner bad" role="alert"><b>تعذّر الاتصال بمنصة خليل في آخر محاولة.</b> تُعرض آخر بيانات صحيحة محفوظة (${si.last ? ago(si.last) : 'لا توجد مزامنة ناجحة بعد'}).</div>`);
+    else if (si.s.status === 'partial' && (si.s.errors || []).length) out.push(`<div class="banner warn"><b>مزامنة جزئية:</b> تعذّر تحديث ${esc((si.s.errors || []).map((e) => e.name || e.sid).filter(Boolean).slice(0, 5).join('، '))}. البيانات السابقة لهؤلاء محفوظة كما هي.</div>`);
+    else if (!si.last) out.push(`<div class="banner info">البيانات المعروضة مأخوذة من منصة خليل يدويًا عند إعداد اللوحة؛ تبدأ المزامنة التلقائية ${st.S.sync && st.S.sync.cron ? 'وفق الجدول المحدد في الإعدادات' : ''}، ويمكنك طلبها الآن بزر «تحديث الآن».</div>`);
+    if (cache.weeks.length === 0) out.push('<div class="banner info">لا توجد أسابيع مرصودة بعد في الفصل المحدد.</div>');
+    return out.join('');
+  }
+  function methodNote() {
+    const P = st.S.points;
+    const pol = { avg: 'متوسط نسبتي المراجعة والتثبيت', max: 'الأعلى بين المراجعة والتثبيت', min: 'الأقل بينهما', review_first: 'المراجعة أولًا', tathbit_first: 'التثبيت أولًا' }[st.S.revPolicy];
+    return `<details class="method"><summary>طريقة احتساب الدرجات</summary>
+      <ul class="help">
+        <li>الدرجة اليومية من ${P.att + P.hifz + P.rev}: الحضور ${P.att}، والحفظ ${P.hifz}، والمراجعة أو التثبيت ${P.rev}. نسبة الإنجاز من المطلوب تتحول إلى درجة، ولا تتجاوز الدرجة الحد الأعلى ولو تجاوز الإنجاز 100%.</li>
+        <li>إذا وُجدت المراجعة والتثبيت في اليوم نفسه تُحتسب درجة واحدة للمعيار حسب السياسة الحالية: ${esc(pol)}.</li>
+        <li>اليوم الذي لم يُرصد بعد لا يُحتسب صفرًا، ويوم الإجازة لا يُحتسب غيابًا، والنشاط غير المطلوب في يوم ما لا يدخل في الحساب.</li>
+        <li>الدرجة المعيارية من 60: كل معيار = (النقاط المكتسبة ÷ النقاط الممكنة في الأيام المعتمدة) × 20. تُعرض بجانبها الدرجة الفعلية (المكتسبة من الممكنة) في ملف الطالب.</li>
+        <li>الدرجة الأسبوعية «مؤقتة» حتى يكتمل رصد جميع أيام الأسبوع، ثم تصبح «نهائية».</li>
+      </ul></details>`;
+  }
+
+  /* ---------------- view: students ---------------- */
+  function viewStudents(root) {
+    const ws = selWeek();
+    const rows = rowsFor(filtered(), ws);
+    root.innerHTML = `${filterBar()}
+      <div class="section-title"><h2>الطلاب · ${esc(weekLabel(ws, true))}</h2><span class="sub">${rows.length} طالبًا</span></div>
+      ${mainTable(rows, { grouped: true })}${methodNote()}`;
+    bindFilters(root); bindTable(root);
+  }
+
+  /* ---------------- view: student profile ---------------- */
+  function viewStudent(root) {
+    const s = students(true).find((x) => x.id === st.ui.student);
+    if (!s) { st.ui.view = 'students'; return render(); }
+    const ws = selWeek();
+    const hist = histOf(s.id);
+    const w = wk(s.id, ws);
+    const a = analysisFor(s.id, ws);
+    const nar = E.narrative(s.name, a, st.S);
+    const th = st.S.thresholds;
+    const t = today();
+    const todayW = wk(s.id, E.weekStartOf(t));
+    const tday = todayW && todayW.days.find((d) => d.g === t);
+    const note = st.notes.get(s.id);
+    const lvl = (c) => w && w.hasData ? E.levelOf(w.crit[c].std, 20, th) : { key: 'na', label: 'لا يوجد' };
+    const critRow = (c, color) => {
+      const v = w && w.hasData ? w.crit[c].std : null;
+      return `<div class="row"><span>${E.CRIT_LABEL[c]}</span><span class="track"><i style="width:${v === null ? 0 : v / 20 * 100}%;background:${color}"></i></span><span class="num"><b>${F(v)}</b>/20</span>${levelChip(lvl(c))}</div>`;
+    };
+    const ratesTxt = (() => {
+      const all = hist.filter((x) => x.hasData);
+      const r = (c) => { const e = all.reduce((s2, x) => s2 + x.crit[c].earned, 0), m = all.reduce((s2, x) => s2 + x.crit[c].max, 0); return m ? Math.round(e / m * 100) + '%' : '—'; };
+      // memorization / review / tathbit achievement ratios from raw amounts
+      const amt = (kind) => { let ach = 0, req = 0; all.forEach((x) => x.days.forEach((d) => { if (!d.counted) return; d.entries.filter((e) => e.kind === kind && e.r > 0).forEach((e) => { req += e.r; ach += Math.min(e.a || 0, e.r); }); })); return req ? Math.round(ach / req * 100) + '%' : '—'; };
+      return { att: r('att'), hifz: amt('hifz'), mur: amt('murajaa'), tat: amt('tathbit') };
+    })();
+
+    const dayRows = w ? w.days.map((d) => {
+      const ents = d.entries.length ? d.entries.map((e) => `<div class="ent"><span class="k">${esc(e.k || '')}</span> ${e.f || e.t ? `<span class="rng">${esc(qtxt(e.f))}${e.t ? ' ← ' + esc(qtxt(e.t)) : ''}</span>` : ''}<br><span class="num">${e.a === null ? '—' : F(e.a)} / ${e.r === null ? '—' : F(e.r)} ${esc(e.u || '')}</span>${e.p !== null && e.p !== undefined ? ` · ${bd(F(e.p) + '%')}` : e.r > 0 && d.status !== 'pending' ? ' · <span class="flag">لم يُسمِّع</span>' : ''}</div>`).join('') : '<span class="muted small">—</span>';
+      const crit = (c) => d.crit[c] ? `${F(d.crit[c].earned)}${d.crit[c].overridden ? '<span class="ovr" title="معدّل يدويًا"> ✎</span>' : ''}` : '<span class="muted">—</span>';
+      const revNote = d.crit.rev && d.crit.rev.murajaa && d.crit.rev.tathbit ? `<div class="small muted">${d.crit.rev.chosen === 'avg' ? 'متوسط المراجعة والتثبيت' : d.crit.rev.chosen === 'murajaa' ? 'احتُسبت المراجعة' : 'احتُسب التثبيت'}</div>` : '';
+      return `<tr><td><b>${esc(d.dayName)}</b><div class="small muted num">${esc(greg(d.g, true))}<br>${esc(d.h ? d.h : hijri(d.g, true))}</div></td>
+        <td><span class="chip ${d.status === 'present' ? 'good' : d.status === 'absent' ? 'bad' : d.status === 'late' || d.status === 'excused' ? 'warn' : 'info'}">${esc(d.label)}</span>${d.flags.map((f) => `<div class="flag">${esc(f)}</div>`).join('')}${d.override ? `<div class="ovr">تعديل يدوي: ${esc(d.override.reason || '')}</div>` : ''}</td>
+        <td>${ents}</td>
+        <td class="n">${crit('att')}</td><td class="n">${crit('hifz')}</td><td class="n">${crit('rev')}${revNote}</td>
+        <td class="n"><b>${d.max ? F(d.earned) + '/' + d.max : '—'}</b>${d.max && d.max < 15 ? `<div class="small muted">${F(d.norm15)}/15 معياري</div>` : ''}</td>
+        ${st.canEdit ? `<td class="n"><button class="btn ghost small" type="button" data-override="${d.g}">تعديل</button></td>` : ''}</tr>`;
+    }).join('') : '';
+
+    root.innerHTML = `
+      <div class="backline"><button class="btn small" type="button" data-back>→ رجوع</button>
+        <div class="field"><label for="weekSel">الأسبوع</label><select id="weekSel">${cache.weeks.map((x) => `<option value="${x}" ${x === ws ? 'selected' : ''}>${esc(weekLabel(x))}</option>`).join('')}</select></div>
+        <span class="spacer" style="flex:1"></span>
+        <button class="btn small" type="button" data-export="student-pdf">PDF</button>
+        <button class="btn small" type="button" data-export="student-xlsx">Excel</button>
+        <button class="btn small" type="button" data-wa="student">ملخص واتساب</button>
+      </div>
+      <div id="reportArea">
+      <div class="profile">
+        <div class="panel">
+          <h2>${esc(s.name)}</h2>
+          <div class="meta"><span>${esc(s.halaqa)}</span><span>${esc(s.group)}</span><a href="${esc(s.url)}" target="_blank" rel="noopener">سجله في منصة خليل ↗</a></div>
+          <div class="scorebig">
+            <div class="b"><div class="l">اليوم (${esc(E.DAY_NAMES[E.weekday(t)])})</div><div class="v">${tday && tday.max ? F(tday.earned) : '—'}<small>/15</small></div><div class="small muted">${tday ? esc(tday.label) : 'لا حلقة اليوم'}</div></div>
+            <div class="b"><div class="l">الأسبوع المحدد</div><div class="v"><span class="tot ${clsTotal(w && w.total)}">${w && w.hasData ? F(w.total) : '—'}</span><small>/60</small></div><div class="small muted">${w && w.hasData ? `الفعلية ${F(w.actualEarned)}/${w.actualMax} · ` : ''}${weekStateChip(w)}</div></div>
+            <div class="b"><div class="l">عن أسبوعه السابق</div><div class="v" style="font-size:24px">${deltaHtml(a.delta)}</div><div class="small muted">${a.prev ? esc(weekLabel(a.prev.weekStart)) : 'لا يوجد أسبوع سابق'}</div></div>
+          </div>
+          <div class="crit" style="margin-top:18px">${critRow('att', SER()[0])}${critRow('hifz', SER()[1])}${critRow('rev', SER()[2])}</div>
+        </div>
+        <div class="panel">
+          <h3>تحليل مواطن القصور</h3>
+          <div class="analysis">
+            <div class="lbl">التحليل</div><p id="narr">${esc(nar.summary)}</p>
+            ${nar.recommendation ? `<div class="lbl">التوصية</div><p class="rec">${esc(nar.recommendation)}</p>` : ''}
+          </div>
+          ${a.alerts.length ? `<ul class="alert-list" style="margin-top:10px">${a.alerts.map((x) => `<li>${alertChip(x)}<div class="txt" style="grid-column:span 2">${esc(x.text)}</div></li>`).join('')}</ul>` : ''}
+          <div class="actions"><button class="btn small" type="button" id="aiWord" ${st.sample ? '' : 'hidden'}>صياغة الملخص بالذكاء الاصطناعي</button><span class="small muted" id="aiNote"></span></div>
+        </div>
+      </div>
+
+      <div class="facts" style="margin-top:14px">
+        <div class="fact"><div class="l">متوسطه منذ بداية الفصل</div><div class="v">${F(a.semesterAvg)}<span class="small muted">/60</span></div></div>
+        <div class="fact"><div class="l">أفضل أسبوع</div><div class="v">${a.best ? F(a.best.total) : '—'}</div><div class="small muted">${a.best ? esc(weekLabel(a.best.weekStart)) : ''}</div></div>
+        <div class="fact"><div class="l">أضعف أسبوع</div><div class="v">${a.worst ? F(a.worst.total) : '—'}</div><div class="small muted">${a.worst ? esc(weekLabel(a.worst.weekStart)) : ''}</div></div>
+        <div class="fact"><div class="l">الغياب · التأخر · بعذر</div><div class="v">${a.absences} · ${a.lates} · ${a.excused}</div></div>
+        <div class="fact"><div class="l">نسبة الحضور (درجات)</div><div class="v">${bd(ratesTxt.att)}</div></div>
+        <div class="fact"><div class="l">إنجاز الحفظ من المطلوب</div><div class="v">${bd(ratesTxt.hifz)}</div></div>
+        <div class="fact"><div class="l">إنجاز المراجعة</div><div class="v">${bd(ratesTxt.mur)}</div></div>
+        <div class="fact"><div class="l">إنجاز التثبيت</div><div class="v">${bd(ratesTxt.tat)}</div></div>
+      </div>
+
+      <div class="panel" style="margin-top:14px"><h3>تفاصيل أيام ${esc(weekLabel(ws, true))} ${w && w.issues.length ? `<span class="chip warn">ملاحظات على القراءة</span>` : ''}</h3>
+        ${w ? `<div class="tablewrap"><table class="daytable"><thead><tr><th>اليوم</th><th>الحالة</th><th>ما أنجزه (السور والمقادير)</th><th>الحضور</th><th>الحفظ</th><th>مراجعة/تثبيت</th><th>اليوم</th>${st.canEdit ? '<th></th>' : ''}</tr></thead><tbody>${dayRows}</tbody></table></div>
+        <p class="small muted" style="margin-top:6px">آخر قراءة من منصة خليل: ${w.fetchedAt ? esc(timeFmt.format(new Date(w.fetchedAt))) : '—'}</p>` : '<p class="empty">لا يوجد سجل لهذا الطالب في الأسبوع المحدد.</p>'}
+      </div>
+
+      <div class="panel" style="margin-top:14px"><h3>درجاته عبر الأسابيع <span class="hint">الإجمالي من 60 والمعايير من 20</span></h3>
+        <div class="chartbox tall"><canvas id="chStudent" role="img" aria-label="درجات الطالب عبر الأسابيع"></canvas></div>
+        ${legendHtml([{ c: css('--fg'), l: 'الإجمالي /60' }, { c: SER()[0], l: 'الحضور' }, { c: SER()[1], l: 'الحفظ' }, { c: SER()[2], l: 'المراجعة أو التثبيت' }])}
+      </div>
+      </div>
+
+      <div class="panel" style="margin-top:14px" ${st.static ? 'hidden' : ''}><h3>ملاحظات المشرف ${note && note.updatedAt ? `<span class="hint">آخر تحديث ${esc(timeFmt.format(new Date(note.updatedAt)))}</span>` : ''}</h3>
+        <textarea id="noteTxt" ${st.canEdit ? '' : 'readonly'} placeholder="اكتب ملاحظاتك عن الطالب">${esc(note ? note.text : '')}</textarea>
+        ${st.canEdit ? '<div class="actions"><button class="btn primary small" type="button" id="saveNote">حفظ الملاحظة</button></div>' : ''}
+      </div>`;
+
+    $('[data-back]', root).addEventListener('click', () => { st.ui.view = st.ui.prevView || 'overview'; render(); });
+    $('#weekSel', root).addEventListener('change', (e) => { st.ui.week = e.target.value; render(); });
+    const sn = $('#saveNote', root);
+    if (sn) sn.addEventListener('click', async () => {
+      const text = $('#noteTxt').value;
+      const before = note ? note.text : '';
+      if (text === before) { toast('لا تغييرات'); return; }
+      if (await writeDoc('notes/' + s.id, { text, updatedAt: new Date().toISOString(), by: st.myId })) { audit('note', s.name, before, text); toast('حُفظت الملاحظة'); }
+    });
+    $$('[data-override]', root).forEach((b) => b.addEventListener('click', () => overrideDialog(s, b.dataset.override)));
+    const ai = $('#aiWord', root); if (ai) ai.addEventListener('click', () => aiWording(s, a, nar, ai));
+    bindExports(root, { kind: 'student', s, ws, w, a, nar });
+
+    // chart
+    const pts = hist.filter((x) => x.hasData);
+    makeChart($('#chStudent'), {
+      type: 'line',
+      data: { labels: pts.map((x) => 'أ' + weekNo(x.weekStart)), datasets: [
+        { label: 'الإجمالي /60', data: pts.map((x) => x.total), borderColor: css('--fg'), backgroundColor: css('--fg'), borderWidth: 2, pointRadius: pts.map((x) => (x.weekStart === ws ? 5 : 3)), pointStyle: pts.map((x) => (x.complete ? 'circle' : 'rectRot')), yAxisID: 'y', tension: .25 },
+        { label: 'الحضور', data: pts.map((x) => x.crit.att.std), borderColor: SER()[0], backgroundColor: SER()[0], borderWidth: 2, pointRadius: 2, yAxisID: 'y', tension: .25 },
+        { label: 'الحفظ', data: pts.map((x) => x.crit.hifz.std), borderColor: SER()[1], backgroundColor: SER()[1], borderWidth: 2, pointRadius: 2, yAxisID: 'y', tension: .25 },
+        { label: 'المراجعة أو التثبيت', data: pts.map((x) => x.crit.rev.std), borderColor: SER()[2], backgroundColor: SER()[2], borderWidth: 2, pointRadius: 2, yAxisID: 'y', tension: .25 }] },
+      options: { interaction: { mode: 'index', intersect: false }, scales: { x: { grid: { display: false } }, y: { min: 0, max: 60, ticks: { stepSize: 10 } } },
+        plugins: { tooltip: { callbacks: { title: (it) => weekLabel(pts[it[0].dataIndex].weekStart) + (pts[it[0].dataIndex].complete ? '' : ' · مؤقت'), label: (it) => ` ${it.dataset.label}: ${F(it.raw)}` } } } }
+    });
+  }
+
+  function overrideDialog(s, g) {
+    const key = s.id + '_' + g;
+    const cur = st.overrides.get(key);
+    const w = wk(s.id, E.weekStartOf(g));
+    const d = w && w.days.find((x) => x.g === g);
+    const P = st.S.points;
+    const val = (c) => cur && cur.values && cur.values[c] !== undefined && cur.values[c] !== null ? cur.values[c] : '';
+    dialog(`<h3>تعديل يدوي · ${esc(s.name)} · ${esc(E.DAY_NAMES[E.weekday(g)])} ${esc(greg(g, true))}</h3>
+      <p class="help">اترك الحقل فارغًا للإبقاء على الدرجة المحسوبة من منصة خليل (${d ? `الحالية: حضور ${d.crit.att ? F(d.crit.att.earned) : '—'}، حفظ ${d.crit.hifz ? F(d.crit.hifz.earned) : '—'}، مراجعة/تثبيت ${d.crit.rev ? F(d.crit.rev.earned) : '—'}` : ''}). يُسجَّل التعديل مع سببه ووقته في سجل التعديلات.</p>
+      <div class="form-grid">
+        <div class="field"><label for="o_att">الحضور (0–${P.att})</label><input id="o_att" type="number" min="0" max="${P.att}" step="0.5" value="${val('att')}"></div>
+        <div class="field"><label for="o_hifz">الحفظ (0–${P.hifz})</label><input id="o_hifz" type="number" min="0" max="${P.hifz}" step="0.5" value="${val('hifz')}"></div>
+        <div class="field"><label for="o_rev">المراجعة أو التثبيت (0–${P.rev})</label><input id="o_rev" type="number" min="0" max="${P.rev}" step="0.5" value="${val('rev')}"></div>
+      </div>
+      <div class="field" style="margin-top:10px"><label for="o_reason">سبب التعديل (مطلوب)</label><input id="o_reason" type="text" value="${esc(cur ? cur.reason || '' : '')}" placeholder="مثال: سمّع عند المشرف بعد الحلقة"></div>
+      <div class="actions"><button class="btn primary" type="button" id="o_save">حفظ التعديل</button>${cur ? '<button class="btn danger" type="button" id="o_del">إلغاء التعديل اليدوي</button>' : ''}<button class="btn" type="button" data-close>إغلاق</button><span id="o_err" class="small" style="color:var(--bad)"></span></div>`,
+    (dlg, close) => {
+      $('#o_save', dlg).addEventListener('click', async () => {
+        const reason = $('#o_reason', dlg).value.trim();
+        if (!reason) { $('#o_err', dlg).textContent = 'اكتب سبب التعديل'; return; }
+        const values = {};
+        for (const c of E.CRITERIA) { const v = $('#o_' + c, dlg).value; if (v !== '') { const n = Number(v); if (isNaN(n) || n < 0 || n > P[c]) { $('#o_err', dlg).textContent = 'قيمة خارج الحدود'; return; } values[c] = n; } }
+        if (!Object.keys(values).length) { $('#o_err', dlg).textContent = 'أدخل قيمة واحدة على الأقل'; return; }
+        const data = { sid: s.id, g, values, reason, by: st.myId, at: new Date().toISOString() };
+        if (await writeDoc('overrides/' + key, data)) { audit('override', `${s.name} · ${g}`, cur ? cur.values : null, values, reason); toast('حُفظ التعديل اليدوي'); close(); }
+      });
+      const del = $('#o_del', dlg);
+      if (del) del.addEventListener('click', async () => {
+        try { await st.db.doc('overrides/' + key).delete(); audit('override-remove', `${s.name} · ${g}`, cur.values, null, 'إلغاء التعديل اليدوي'); toast('أُلغي التعديل'); close(); } catch (e) { toast('تعذّر الإلغاء'); }
+      });
+    });
+  }
+
+  async function aiWording(s, a, nar, btn) {
+    if (!st.sample || !a.cur) return;
+    btn.disabled = true; $('#aiNote').textContent = 'جارٍ الصياغة…';
+    const w = a.cur;
+    const facts = {
+      الطالب: s.name, الأسبوع: weekLabel(w.weekStart), نهائي: w.complete, الإجمالي_من_60: w.total,
+      الحضور_من_20: w.crit.att.std, الحفظ_من_20: w.crit.hifz.std, المراجعة_أو_التثبيت_من_20: w.crit.rev.std,
+      الغياب: w.absent, التأخر: w.late, الفرق_عن_الأسبوع_السابق: a.delta, أكثر_معيار_فقد_فيه_نقاطًا: a.weakest ? E.CRIT_LABEL[a.weakest.c] + ` (فقد ${F(a.weakest.lost)} من 20)` : 'لا يوجد', تنبيهات: a.alerts.map((x) => x.text)
+    };
+    try {
+      const r = await st.sample(`أنت تساعد مشرف حلقة قرآن. اكتب فقرة عربية قصيرة (3 جمل) تلخّص أداء الطالب ثم توصية عملية واحدة، اعتمادًا على هذه الأرقام فقط. لا تذكر أسبابًا أو أحكامًا غير موجودة في البيانات، ولا تضف أرقامًا جديدة، ولا تفترض ظروف الطالب.\n\n${JSON.stringify(facts, null, 1)}\n\nالملخص الحالي المبني على القواعد: ${nar.summary} ${nar.recommendation}`, { modelTier: 'quick' });
+      $('#narr').textContent = r.text.trim();
+      $('#aiNote').textContent = 'صياغة آلية من الأرقام أعلاه؛ راجعها قبل المشاركة.';
+    } catch (e) { $('#aiNote').textContent = e && e.code === 'not_granted' ? 'لم يُسمح بالصياغة الآلية' : 'تعذّرت الصياغة'; }
+    finally { btn.disabled = false; }
+  }
+
+  /* ---------------- view: alerts ---------------- */
+  function viewAlerts(root) {
+    const ws = selWeek();
+    const rows = rowsFor(filtered(), ws);
+    const cat = (title, list, hint) => `<div class="panel"><h3>${title} <span class="hint">${list.length}</span></h3>${hint ? `<p class="help">${hint}</p>` : ''}${list.length ? `<ul class="alert-list">${list.map((x) => `<li>${alertChip(x.al)}<div><div class="who">${studentLink(x.r.s)}</div><div class="txt">${esc(x.al.text)}</div></div><span class="tot ${clsTotal(x.r.total)}">${F(x.r.total)}</span></li>`).join('')}</ul>` : '<p class="empty">لا يوجد</p>'}</div>`;
+    const pick = (codes, level) => rows.flatMap((r) => (r.a ? r.a.alerts : []).filter((al) => codes.includes(al.code) && (!level || al.level === level)).map((al) => ({ r, al })));
+    const th = st.S.thresholds;
+    root.innerHTML = `${filterBar()}
+      <div class="section-title"><h2>التنبيهات · ${esc(weekLabel(ws, true))}</h2><span class="sub">الحدود قابلة للتعديل من الإعدادات</span></div>
+      <div class="grid g2">
+        ${cat('متابعة عاجلة', rows.filter((r) => r.a && r.a.urgent).map((r) => ({ r, al: r.a.alerts.find((x) => x.level === 'critical') })), `درجة أقل من ${th.critical}/60 أو غياب متكرر يتجاوز الحد.`)}
+        ${cat('دون الحد المقبول', pick(['low']), `الدرجة الأسبوعية أقل من ${th.weekLow}/60.`)}
+        ${cat('غياب متكرر', pick(['absence']), `${th.absenceRepeat} أيام غياب أو أكثر خلال آخر ${th.absenceWindowWeeks} أسابيع مرصودة.`)}
+        ${cat('انخفاض متكرر أو ملحوظ', pick(['decline', 'drop', 'repeatWeak']), `تراجع أسبوعين متتاليين، أو انخفاض ${th.changeNotable} نقاط فأكثر، أو ضعف المعيار نفسه أسبوعين.`)}
+        ${cat('تحسّن ملحوظ', pick(['improve']), `ارتفاع ${th.changeNotable} نقاط فأكثر عن الأسبوع السابق للطالب نفسه.`)}
+        <div class="panel"><h3>لم تُرصد بياناتهم <span class="hint">${rows.filter((r) => !r.w || !r.w.hasData).length}</span></h3>${rows.filter((r) => !r.w || !r.w.hasData).map((r) => `<div>${studentLink(r.s)}</div>`).join('') || '<p class="empty">لا يوجد</p>'}
+          ${rows.filter((r) => r.w && r.w.hasData && !r.w.complete).length ? `<p class="help" style="margin-top:8px">أسبوع غير مكتمل الرصد: ${rows.filter((r) => r.w && r.w.hasData && !r.w.complete).map((r) => esc(r.s.name)).join('، ')}</p>` : ''}</div>
+      </div>`;
+    bindFilters(root);
+  }
+
+  /* ---------------- reports ---------------- */
+  function scopeList() {
+    const rp = st.ui.report;
+    let list = students();
+    if (rp.scope === 'halaqa' && rp.scopeVal) list = list.filter((s) => s.halaqa === rp.scopeVal);
+    if (rp.scope === 'group' && rp.scopeVal) list = list.filter((s) => s.group === rp.scopeVal);
+    return list;
+  }
+  function scopeName() { const rp = st.ui.report; return rp.scope !== 'all' && rp.scopeVal ? rp.scopeVal : 'جميع طلاب نمو'; }
+
+  function buildReport() {
+    const rp = st.ui.report;
+    const list = scopeList();
+    const S = st.S;
+    const out = { title: '', subtitle: scopeName(), sections: [], wa: '' };
+    if (rp.type === 'daily') {
+      const date = rp.date || todayStats(list).day;
+      const ws = E.weekStartOf(date);
+      out.title = `التقرير اليومي · ${E.DAY_NAMES[E.weekday(date)]} ${greg(date)} · ${hijri(date)}`;
+      const rows = list.map((s) => { const w = wk(s.id, ws); const d = w && w.days.find((x) => x.g === date); return { s, d }; });
+      const head = ['الطالب', 'الحلقة', 'المجموعة', 'الحضور', 'درجة الحضور', 'درجة الحفظ', 'درجة المراجعة/التثبيت', 'المجموع /15'];
+      const body = rows.map(({ s, d }) => [s.name, s.halaqa, s.group, d ? d.label : 'لم تُرصد', d && d.crit.att ? d.crit.att.earned : '—', d && d.crit.hifz ? d.crit.hifz.earned : (d && d.counted ? 'غير مطلوب' : '—'), d && d.crit.rev ? d.crit.rev.earned : '—', d && d.max ? (d.max === 15 ? d.earned : `${F(d.earned)}/${d.max} (${F(d.norm15)})`) : '—']);
+      const pend = rows.filter((r) => !r.d || r.d.status === 'pending');
+      const c = { p: rows.filter((r) => r.d && (r.d.status === 'present' || r.d.status === 'late')).length, a: rows.filter((r) => r.d && r.d.status === 'absent').length };
+      out.sections.push({ type: 'kv', items: [['حاضر', c.p], ['غائب', c.a], ['لم تُرصد', pend.length], ['متوسط الدرجة', F(E.mean(rows.filter((r) => r.d && r.d.max).map((r) => r.d.norm15))) + '/15']] });
+      out.sections.push({ type: 'table', title: 'درجات اليوم', head, body, numCols: [4, 5, 6, 7] });
+      if (pend.length) out.sections.push({ type: 'text', title: 'لم تُرصد بياناتهم', text: pend.map((r) => r.s.name).join('، ') });
+      out.wa = `*${out.title}*\n${scopeName()}\nحاضر: ${c.p} · غائب: ${c.a} · لم تُرصد: ${pend.length}\n\n` + rows.filter((r) => r.d && r.d.max).sort((x, y) => y.d.norm15 - x.d.norm15).map((r, i) => `${i + 1}. ${r.s.name}: ${F(r.d.norm15)}/15 (${r.d.label})`).join('\n') + (pend.length ? `\n\nلم تُرصد: ${pend.map((r) => r.s.name).join('، ')}` : '');
+    } else if (rp.type === 'weekly') {
+      const ws = rp.week || selWeek();
+      out.title = `التقرير الأسبوعي · ${weekLabel(ws, true)}`;
+      const rows = rowsFor(list, ws).sort((a, b) => (b.total === null ? -1 : b.total) - (a.total === null ? -1 : a.total));
+      const wd = rows.filter((r) => r.w && r.w.hasData);
+      const g = E.groupStats(wd.map((r) => r.w));
+      out.sections.push({ type: 'kv', items: [['عدد الطلاب', list.length], ['متوسط الدرجة', F(g.avgTotal) + '/60'], ['نسبة الحضور', g.attendanceRate === null ? '—' : Math.round(g.attendanceRate * 100) + '%'], ['أسابيع نهائية', `${wd.filter((r) => r.w.complete).length} من ${wd.length}`]] });
+      out.sections.push({ type: 'table', title: 'ترتيب الطلاب', head: ['#', 'الطالب', 'الحلقة', 'المجموعة', 'الحضور /20', 'الحفظ /20', 'المراجعة أو التثبيت /20', 'الإجمالي /60', 'عن السابق', 'الحالة'],
+        body: rows.map((r, i) => [r.total === null ? '—' : i + 1, r.s.name, r.s.halaqa, r.s.group, r.w && r.w.hasData ? r.w.crit.att.std : '—', r.w && r.w.hasData ? r.w.crit.hifz.std : '—', r.w && r.w.hasData ? r.w.crit.rev.std : '—', r.total === null ? '—' : r.total, r.a && r.a.delta !== null ? (r.a.delta > 0 ? '+' : '') + F(r.a.delta) : '—', !r.w || !r.w.hasData ? 'لا بيانات' : r.w.complete ? 'نهائي' : 'مؤقت']), numCols: [0, 4, 5, 6, 7, 8] });
+      out.sections.push(groupSection(list, (s) => s.halaqa, (st.roster || {}).halaqat || [], ws, 'متوسط الحلقات'));
+      out.sections.push(groupSection(list, (s) => s.group, (st.roster || {}).groups || [], ws, 'متوسط مجموعات نمو'));
+      out.sections.push({ type: 'table', title: 'نقاط القوة والقصور', head: ['الطالب', 'أقوى معيار', 'أكثر معيار فقد فيه نقاطًا', 'التحليل والتوصية'], body: rows.filter((r) => r.a && r.a.cur).map((r) => { const n = E.narrative(r.s.name, r.a, S); return [r.s.name, r.a.strongest ? `${E.CRIT_LABEL[r.a.strongest.c]} (${F(r.a.strongest.std)})` : '—', r.a.weakest ? `${E.CRIT_LABEL[r.a.weakest.c]} (−${F(r.a.weakest.lost)})` : 'لا يوجد', n.summary + ' ' + n.recommendation]; }) });
+      const imp = rows.filter((r) => r.a && r.a.delta > 0.05).length, dec = rows.filter((r) => r.a && r.a.delta < -0.05).length;
+      const weakC = E.CRITERIA.map((c) => ({ c, v: E.mean(wd.map((r) => r.w.crit[c].std)) })).filter((x) => x.v !== null).sort((a, b) => a.v - b.v)[0];
+      out.sections.push({ type: 'text', title: 'خلاصة الأسبوع', text: `متوسط الطلاب ${F(g.avgTotal)} من 60، وتحسّن ${imp} طالبًا وتراجع ${dec} عن أسابيعهم السابقة. ${weakC ? `أضعف المعايير على مستوى المجموعة: ${E.CRIT_LABEL[weakC.c]} بمتوسط ${F(weakC.v)} من 20.` : ''} ${wd.filter((r) => !r.w.complete).length ? 'بعض الدرجات مؤقتة لعدم اكتمال الرصد.' : ''}`.trim() });
+      out.wa = `*${out.title}*\n${scopeName()}\nالمتوسط: ${F(g.avgTotal)}/60 · الحضور: ${g.attendanceRate === null ? '—' : Math.round(g.attendanceRate * 100) + '%'}\n\n` + rows.filter((r) => r.total !== null).map((r, i) => `${i + 1}. ${r.s.name}: ${F(r.total)}/60 (حضور ${F(r.w.crit.att.std)} · حفظ ${F(r.w.crit.hifz.std)} · مراجعة/تثبيت ${F(r.w.crit.rev.std)})${r.w.complete ? '' : ' مؤقت'}`).join('\n') + `\n\n${out.sections[out.sections.length - 1].text}`;
+    } else if (rp.type === 'monthly') {
+      const months = Array.from(new Set(cache.weeks.map((w) => w.slice(0, 7)))).sort().reverse();
+      const m = rp.month && months.includes(rp.month) ? rp.month : months[0];
+      rp.month = m;
+      const wsList = cache.weeks.filter((w) => w.slice(0, 7) === m).sort();
+      out.title = `التقرير الشهري · ${m ? monthFmt.format(asDate(m + '-01')) : ''} · ${wsList.length ? hijri(wsList[0], true) + ' – ' + hijri(E.addDays(wsList[wsList.length - 1], 3), true) : ''}`;
+      const head = ['الطالب'].concat(wsList.map((w) => 'أ' + weekNo(w))).concat(['متوسط الشهر', 'التغير', 'الحضور', 'أضعف معيار']);
+      const body = list.map((s) => {
+        const ws2 = wsList.map((w) => wk(s.id, w)).map((w) => (w && w.hasData ? w : null));
+        const vals = ws2.map((w) => (w ? w.total : null));
+        const v = vals.filter((x) => x !== null);
+        const pres = ws2.filter(Boolean).reduce((a, w) => a + w.present, 0), abs = ws2.filter(Boolean).reduce((a, w) => a + w.absent, 0);
+        const crit = E.CRITERIA.map((c) => ({ c, v: E.mean(ws2.filter(Boolean).map((w) => w.crit[c].std)) })).filter((x) => x.v !== null).sort((a, b) => a.v - b.v)[0];
+        return { s, row: [s.name].concat(vals.map((x) => (x === null ? '—' : x))).concat([v.length ? E.round2(E.mean(v)) : '—', v.length > 1 ? (v[v.length - 1] - v[0] > 0 ? '+' : '') + F(v[v.length - 1] - v[0]) : '—', pres + abs ? Math.round(pres / (pres + abs) * 100) + '%' : '—', crit ? `${E.CRIT_LABEL[crit.c]} (${F(crit.v)})` : '—']), change: v.length > 1 ? v[v.length - 1] - v[0] : null };
+      });
+      out.sections.push({ type: 'table', title: 'درجات الأسابيع خلال الشهر (من 60)', head, body: body.map((b) => b.row), numCols: head.map((_, i) => i).filter((i) => i > 0 && i < head.length - 1) });
+      const allW = list.flatMap((s) => wsList.map((w) => wk(s.id, w)).filter((w) => w && w.hasData));
+      const crit = E.CRITERIA.map((c) => ({ c, v: E.mean(allW.map((w) => w.crit[c].std)) })).filter((x) => x.v !== null).sort((a, b) => a.v - b.v);
+      const pres = allW.reduce((a, w) => a + w.present, 0), abs = allW.reduce((a, w) => a + w.absent, 0);
+      const ch = body.filter((b) => b.change !== null).sort((a, b) => b.change - a.change);
+      out.sections.push({ type: 'kv', items: [['نسبة انتظام الحضور', pres + abs ? Math.round(pres / (pres + abs) * 100) + '%' : '—'], ['أكثر المعايير انخفاضًا', crit[0] ? `${E.CRIT_LABEL[crit[0].c]} (${F(crit[0].v)}/20)` : '—'], ['الأكثر تحسنًا', ch[0] && ch[0].change > 0 ? `${ch[0].s.name} (+${F(ch[0].change)})` : '—'], ['الأكثر تراجعًا', ch.length && ch[ch.length - 1].change < 0 ? `${ch[ch.length - 1].s.name} (${F(ch[ch.length - 1].change)})` : '—']] });
+      out.wa = `*${out.title}*\n${scopeName()}\nانتظام الحضور: ${out.sections[1].items[0][1]} · أضعف معيار: ${out.sections[1].items[1][1]}\nالأكثر تحسنًا: ${out.sections[1].items[2][1]} · الأكثر تراجعًا: ${out.sections[1].items[3][1]}\n\n` + body.map((b) => `${b.s.name}: ${b.row[head.length - 4]}`).join('\n');
+      out.monthOptions = months;
+    } else if (rp.type === 'cumulative') {
+      const upto = rp.upto || today();
+      out.title = `التقرير التراكمي · من بداية الفصل حتى ${greg(upto)} (${hijri(upto)})`;
+      const head = ['الطالب', 'الحلقة', 'أسابيع مرصودة', 'متوسط الأداء /60', 'نسبة الإنجاز', 'حضور', 'غياب', 'تأخر', 'الاتجاه العام'];
+      const body = list.map((s) => {
+        const h = histOf(s.id).filter((w) => w.hasData && w.weekStart <= upto);
+        const e = h.reduce((a, w) => a + w.actualEarned, 0), m = h.reduce((a, w) => a + w.actualMax, 0);
+        const vals = h.map((w) => w.total).filter((x) => x !== null);
+        const trend = slope(vals);
+        return [s.name, s.halaqa, h.length, vals.length ? E.round2(E.mean(vals)) : '—', m ? Math.round(e / m * 100) + '%' : '—', h.reduce((a, w) => a + w.present, 0), h.reduce((a, w) => a + w.absent, 0), h.reduce((a, w) => a + w.late, 0), vals.length < 3 ? 'بيانات غير كافية' : trend > 0.75 ? 'تحسّن' : trend < -0.75 ? 'تراجع' : 'مستقر'];
+      });
+      body.sort((a, b) => (typeof b[3] === 'number' ? b[3] : -1) - (typeof a[3] === 'number' ? a[3] : -1));
+      out.sections.push({ type: 'table', title: 'الأداء التراكمي', head, body, numCols: [2, 3, 4, 5, 6, 7] });
+      out.sections.push({ type: 'text', title: 'طريقة الاتجاه العام', text: 'يُحسب من ميل درجات الأسابيع المرصودة: أكثر من 0.75 نقطة أسبوعيًا تحسّن، وأقل من −0.75 تراجع، وما بينهما مستقر.' });
+      out.wa = `*${out.title}*\n${scopeName()}\n\n` + body.map((r) => `${r[0]}: ${r[3] === '—' ? '—' : F(r[3])}/60 · غياب ${r[6]} · ${r[8]}`).join('\n');
+    } else if (rp.type === 'groups') {
+      const ws = rp.week || selWeek();
+      out.title = `تقرير الحلقات والمجموعات · ${weekLabel(ws, true)}`;
+      out.sections.push(groupSection(students(), (s) => s.halaqa, (st.roster || {}).halaqat || [], ws, 'مقارنة الحلقات القرآنية', true));
+      out.sections.push(groupSection(students(), (s) => s.group, (st.roster || {}).groups || [], ws, 'مقارنة مجموعات نمو', true));
+      const gs = ((st.roster || {}).groups || []).map((k) => ({ k, g: E.groupStats(students().filter((s) => s.group === k).map((s) => wk(s.id, ws)).filter((w) => w && w.hasData)) }));
+      const topAtt = gs.filter((x) => x.g.attendanceRate !== null).sort((a, b) => b.g.attendanceRate - a.g.attendanceRate)[0];
+      const topAch = gs.filter((x) => x.g.avgTotal !== null).sort((a, b) => b.g.avgTotal - a.g.avgTotal)[0];
+      out.sections.push({ type: 'kv', items: [['المجموعة الأعلى حضورًا', topAtt ? `${topAtt.k} (${Math.round(topAtt.g.attendanceRate * 100)}%)` : '—'], ['المجموعة الأعلى إنجازًا', topAch ? `${topAch.k} (${F(topAch.g.avgTotal)}/60)` : '—']] });
+      out.sections.push({ type: 'text', title: 'ملاحظة على المقارنة', text: 'تُقارن الحلقات والمجموعات بمتوسط درجات طلابها لا بمجموعها، حتى لا تتأثر المقارنة باختلاف عدد الطلاب، ويُذكر عدد الطلاب الذين لديهم بيانات في كل منها.' });
+      out.wa = `*${out.title}*\n\nالحلقات:\n` + out.sections[0].body.map((r) => `${r[0]}: ${r[2]}/60 (${r[1]} طلاب)`).join('\n') + `\n\nمجموعات نمو:\n` + out.sections[1].body.map((r) => `${r[0]}: ${r[2]}/60 (${r[1]} طلاب)`).join('\n') + `\n\nالأعلى حضورًا: ${out.sections[2].items[0][1]}\nالأعلى إنجازًا: ${out.sections[2].items[1][1]}`;
+    }
+    return out;
+  }
+  function slope(v) { const n = v.length; if (n < 2) return 0; const mx = (n - 1) / 2, my = v.reduce((a, b) => a + b, 0) / n; let num = 0, den = 0; v.forEach((y, i) => { num += (i - mx) * (y - my); den += (i - mx) ** 2; }); return den ? num / den : 0; }
+  function groupSection(list, keyFn, keys, ws, title, rank) {
+    let body = keys.map((k) => { const mem = list.filter((s) => keyFn(s) === k); const g = E.groupStats(mem.map((s) => wk(s.id, ws)).filter((w) => w && w.hasData)); return [k, `${g.n}/${mem.length}`, g.avgTotal === null ? '—' : E.round2(g.avgTotal), g.avgAtt === null ? '—' : E.round2(g.avgAtt), g.avgHifz === null ? '—' : E.round2(g.avgHifz), g.avgRev === null ? '—' : E.round2(g.avgRev), g.attendanceRate === null ? '—' : Math.round(g.attendanceRate * 100) + '%', g.points ? E.round2(g.points) : 0, g]; }).filter((r) => r[8].n || list.some((s) => keyFn(s) === r[0]));
+    if (rank) body.sort((a, b) => (typeof b[2] === 'number' ? b[2] : -1) - (typeof a[2] === 'number' ? a[2] : -1));
+    return { type: 'table', title, head: [title.includes('مجموع') ? 'المجموعة' : 'الحلقة', 'طلاب لديهم بيانات', 'متوسط /60', 'الحضور /20', 'الحفظ /20', 'المراجعة/التثبيت /20', 'نسبة الحضور', 'مجموع النقاط'], body: body.map((r) => r.slice(0, 8)), numCols: [2, 3, 4, 5, 6, 7] };
+  }
+  function cellTxt(c) { const t = typeof c === 'number' ? F(c) : String(c === null || c === undefined ? '' : c); return /^[+\-−]?[\d.]+%?$|^[\d.]+\/[\d.]+$/.test(t) ? bd(t) : esc(t); }
+  function renderReportHtml(rep) {
+    return `<div class="report-head"><div><h2>${esc(rep.title)}</h2><div class="muted">${esc(rep.subtitle)} · أُعدّ في ${esc(timeFmt.format(new Date()))}</div></div></div>` + rep.sections.map((sec) => {
+      if (sec.type === 'kv') return `<div class="facts" style="margin-bottom:14px">${sec.items.map(([l, v]) => `<div class="fact"><div class="l">${esc(l)}</div><div class="v">${cellTxt(v)}</div></div>`).join('')}</div>`;
+      if (sec.type === 'text') return `<div class="panel" style="margin-bottom:14px"><h3>${esc(sec.title)}</h3><p style="margin:0">${esc(sec.text)}</p></div>`;
+      return `<div class="panel" style="margin-bottom:14px"><h3>${esc(sec.title)}</h3><div class="tablewrap"><table><thead><tr>${sec.head.map((h) => `<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${sec.body.map((r) => `<tr>${r.map((c, i) => `<td class="${(sec.numCols || []).includes(i) ? 'n' : ''}">${cellTxt(c)}</td>`).join('')}</tr>`).join('') || `<tr><td colspan="${sec.head.length}" class="empty">لا توجد بيانات</td></tr>`}</tbody></table></div></div>`;
+    }).join('');
+  }
+  function viewReports(root) {
+    const rp = st.ui.report;
+    const r = st.roster || { halaqat: [], groups: [] };
+    if (!rp.week) rp.week = selWeek();
+    const rep = buildReport();
+    const types = [['daily', 'يومي'], ['weekly', 'أسبوعي'], ['monthly', 'شهري'], ['cumulative', 'تراكمي'], ['groups', 'الحلقات والمجموعات']];
+    root.innerHTML = `
+      <div class="filters">
+        <div class="field"><label>نوع التقرير</label><div class="seg" role="group">${types.map(([k, l]) => `<button type="button" data-rtype="${k}" aria-pressed="${rp.type === k}">${l}</button>`).join('')}</div></div>
+        ${rp.type === 'daily' ? `<div class="field"><label for="rDate">اليوم</label><input id="rDate" type="date" value="${rp.date || todayStats(scopeList()).day}"></div>` : ''}
+        ${rp.type === 'weekly' || rp.type === 'groups' ? `<div class="field"><label for="rWeek">الأسبوع</label><select id="rWeek">${cache.weeks.map((w) => `<option value="${w}" ${w === rp.week ? 'selected' : ''}>${esc(weekLabel(w))}</option>`).join('')}</select></div>` : ''}
+        ${rp.type === 'monthly' ? `<div class="field"><label for="rMonth">الشهر</label><select id="rMonth">${(rep.monthOptions || []).map((m) => `<option value="${m}" ${m === rp.month ? 'selected' : ''}>${esc(monthFmt.format(asDate(m + '-01')))}</option>`).join('')}</select></div>` : ''}
+        ${rp.type === 'cumulative' ? `<div class="field"><label for="rUpto">حتى تاريخ</label><input id="rUpto" type="date" value="${rp.upto || today()}"></div>` : ''}
+        ${rp.type !== 'groups' ? `<div class="field"><label for="rScope">النطاق</label><select id="rScope">
+          <option value="all|">جميع الطلاب</option>
+          <optgroup label="حلقة قرآنية">${r.halaqat.map((h) => `<option value="halaqa|${esc(h)}" ${rp.scope === 'halaqa' && rp.scopeVal === h ? 'selected' : ''}>${esc(h)}</option>`).join('')}</optgroup>
+          <optgroup label="مجموعة نمو">${r.groups.map((h) => `<option value="group|${esc(h)}" ${rp.scope === 'group' && rp.scopeVal === h ? 'selected' : ''}>${esc(h)}</option>`).join('')}</optgroup></select></div>` : ''}
+      </div>
+      <div class="actions" style="margin-top:4px">
+        <button class="btn" type="button" data-export="report-pdf">تنزيل PDF (للطباعة)</button>
+        <button class="btn" type="button" data-export="report-xlsx">تنزيل Excel</button>
+        <button class="btn" type="button" data-wa="report">ملخص واتساب</button>
+        ${rp.type === 'weekly' ? '<button class="btn" type="button" data-export="all-students-pdf">تقارير جميع الطلاب (PDF)</button>' : ''}
+        <span class="small muted">الطباعة: نزّل ملف PDF ثم اطبعه من جهازك.</span>
+      </div>
+      <div id="reportArea" style="margin-top:14px">${renderReportHtml(rep)}</div>`;
+    $$('[data-rtype]', root).forEach((b) => b.addEventListener('click', () => { rp.type = b.dataset.rtype; render(); }));
+    const on = (id, fn) => { const el = $('#' + id, root); if (el) el.addEventListener('change', () => { fn(el.value); render(); }); };
+    on('rDate', (v) => { rp.date = v; }); on('rWeek', (v) => { rp.week = v; }); on('rMonth', (v) => { rp.month = v; }); on('rUpto', (v) => { rp.upto = v; });
+    on('rScope', (v) => { const [a, b] = v.split('|'); rp.scope = a; rp.scopeVal = b || ''; });
+    bindExports(root, { kind: 'report', rep });
+  }
+
+  /* ---------------- exports ---------------- */
+  function bindExports(root, ctx) {
+    $$('[data-export]', root).forEach((b) => b.addEventListener('click', () => doExport(b.dataset.export, ctx, b)));
+    $$('[data-wa]', root).forEach((b) => b.addEventListener('click', () => waDialog(ctx)));
+  }
+  function studentReportModel(s, ws) {
+    const w = wk(s.id, ws), a = analysisFor(s.id, ws), n = E.narrative(s.name, a, st.S);
+    const days = w ? w.days.map((d) => [d.dayName + ' ' + greg(d.g, true), d.label, d.entries.map((e) => `${e.k || ''} ${qtxt(e.f)}${e.t ? ' ← ' + qtxt(e.t) : ''}: ${e.a === null ? '—' : F(e.a)}/${e.r === null ? '—' : F(e.r)} ${e.u || ''}`).join(' | ') || '—', d.crit.att ? d.crit.att.earned : '—', d.crit.hifz ? d.crit.hifz.earned : '—', d.crit.rev ? d.crit.rev.earned : '—', d.max ? `${F(d.earned)}/${d.max}` : '—']) : [];
+    return {
+      title: `تقرير الطالب ${s.name} · ${weekLabel(ws, true)}`, subtitle: `${s.halaqa} · ${s.group}`,
+      sections: [
+        { type: 'kv', items: [['الإجمالي', w && w.hasData ? `${F(w.total)}/60` : '—'], ['الحضور', w && w.hasData ? `${F(w.crit.att.std)}/20` : '—'], ['الحفظ', w && w.hasData ? `${F(w.crit.hifz.std)}/20` : '—'], ['المراجعة أو التثبيت', w && w.hasData ? `${F(w.crit.rev.std)}/20` : '—'], ['عن الأسبوع السابق', a.delta === null ? '—' : (a.delta > 0 ? '+' : '') + F(a.delta)], ['متوسط الفصل', a.semesterAvg === null ? '—' : F(a.semesterAvg) + '/60'], ['الغياب', a.absences], ['حالة الأسبوع', w && w.hasData ? (w.complete ? 'نهائي' : 'مؤقت') : 'لا بيانات']] },
+        { type: 'text', title: 'التحليل', text: n.summary },
+        { type: 'text', title: 'التوصية', text: n.recommendation || '—' },
+        { type: 'table', title: 'تفاصيل الأيام', head: ['اليوم', 'الحالة', 'الإنجاز', 'الحضور', 'الحفظ', 'مراجعة/تثبيت', 'المجموع'], body: days, numCols: [3, 4, 5, 6] },
+        { type: 'table', title: 'الأسابيع', head: ['الأسبوع', 'الحضور', 'الحفظ', 'المراجعة/التثبيت', 'الإجمالي', 'الحالة'], body: histOf(s.id).filter((x) => x.hasData).map((x) => [weekLabel(x.weekStart), x.crit.att.std, x.crit.hifz.std, x.crit.rev.std, x.total, x.complete ? 'نهائي' : 'مؤقت']), numCols: [1, 2, 3, 4] }
+      ],
+      wa: `*${s.name}* · ${weekLabel(ws)}\n${s.halaqa} · ${s.group}\nالإجمالي: ${w && w.hasData ? F(w.total) : '—'}/60${w && w.hasData && !w.complete ? ' (مؤقت)' : ''}\nالحضور ${w && w.hasData ? F(w.crit.att.std) : '—'}/20 · الحفظ ${w && w.hasData ? F(w.crit.hifz.std) : '—'}/20 · المراجعة أو التثبيت ${w && w.hasData ? F(w.crit.rev.std) : '—'}/20\n\n${n.summary}\nالتوصية: ${n.recommendation || '—'}`
+    };
+  }
+  function waDialog(ctx) {
+    const text = ctx.kind === 'student' ? studentReportModel(ctx.s, ctx.ws).wa : ctx.rep.wa;
+    dialog(`<h3>ملخص للمشاركة عبر واتساب</h3><div class="wa" id="waText">${esc(text)}</div>
+      <div class="actions"><button class="btn primary" type="button" id="waCopy">نسخ النص</button><a class="btn" href="https://wa.me/?text=${encodeURIComponent(text)}" target="_blank" rel="noopener">فتح واتساب ↗</a><button class="btn" type="button" data-close>إغلاق</button></div>`,
+    (dlg) => { $('#waCopy', dlg).addEventListener('click', (e) => copyText(text, e.currentTarget)); });
+  }
+  async function saveFile(filename, data) {
+    if (!st.dl) {
+      try {
+        const blob = data instanceof Blob ? data : new Blob([data]);
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = filename; document.body.appendChild(a); a.click();
+        setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 4000); toast('جاهز: ' + filename);
+      } catch (e) { toast('تعذّر التنزيل'); }
+      return;
+    }
+    try { await st.dl.save({ filename, data }); toast('جاهز: ' + filename); }
+    catch (e) { if (e && e.code !== 'declined') toast('تعذّر التنزيل' + (e && e.message ? ': ' + e.message : '')); }
+  }
+  const safeName = (s) => s.replace(/[\\/:*?"<>|]/g, '-').slice(0, 120);
+  function xlsxFrom(models) {
+    if (!window.XLSX) throw new Error('مكتبة Excel لم تُحمّل');
+    const wb = XLSX.utils.book_new();
+    wb.Workbook = { Views: [{ RTL: true }] };
+    const used = new Set();
+    models.forEach((m, mi) => {
+      const aoa = [[m.title], [m.subtitle], []];
+      m.sections.forEach((sec) => {
+        if (sec.type === 'kv') { sec.items.forEach(([l, v]) => aoa.push([l, v])); aoa.push([]); }
+        else if (sec.type === 'text') { aoa.push([sec.title]); aoa.push([sec.text]); aoa.push([]); }
+        else { aoa.push([sec.title]); aoa.push(sec.head); sec.body.forEach((r) => aoa.push(r.map((c) => (typeof c === 'number' ? E.round2(c) : c)))); aoa.push([]); }
+      });
+      const ws = XLSX.utils.aoa_to_sheet(aoa);
+      ws['!cols'] = Array.from({ length: 12 }, (_, i) => ({ wch: i === 0 || i === 1 ? 26 : 14 }));
+      let name = (m.sheet || m.title).replace(/[\\/?*[\]:]/g, ' ').slice(0, 28) || 'تقرير';
+      while (used.has(name)) name = name.slice(0, 25) + ' ' + (mi + 1);
+      used.add(name);
+      XLSX.utils.book_append_sheet(wb, ws, name);
+    });
+    return new Uint8Array(XLSX.write(wb, { bookType: 'xlsx', type: 'array' }));
+  }
+  async function pdfFrom(htmlBlocks) {
+    if (!window.html2canvas || !window.jspdf) throw new Error('مكتبة PDF لم تُحمّل');
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF({ unit: 'pt', format: 'a4', orientation: 'portrait' });
+    const pw = pdf.internal.pageSize.getWidth(), ph = pdf.internal.pageSize.getHeight(), m = 24;
+    const host = document.createElement('div');
+    host.className = 'pdf-sheet';
+    host.style.cssText = 'position:fixed;left:-10000px;top:0;width:900px;padding:28px;direction:rtl;font-family:var(--f-body)';
+    document.body.appendChild(host);
+    try {
+      for (let i = 0; i < htmlBlocks.length; i++) {
+        host.innerHTML = htmlBlocks[i];
+        await new Promise((r) => setTimeout(r, 30));
+        let canvas;
+        try { canvas = await html2canvas(host, { scale: 2, backgroundColor: '#ffffff', foreignObjectRendering: true, logging: false }); }
+        catch (e) { canvas = null; }
+        if (!canvas || canvas.width < 10) canvas = await html2canvas(host, { scale: 2, backgroundColor: '#ffffff', logging: false });
+        const imgW = pw - 2 * m, scale = imgW / canvas.width, pageH = (ph - 2 * m) / scale;
+        let y = 0, first = true;
+        while (y < canvas.height) {
+          const h = Math.min(pageH, canvas.height - y);
+          const slice = document.createElement('canvas'); slice.width = canvas.width; slice.height = h;
+          slice.getContext('2d').drawImage(canvas, 0, y, canvas.width, h, 0, 0, canvas.width, h);
+          if (i > 0 || !first) pdf.addPage();
+          pdf.addImage(slice.toDataURL('image/jpeg', 0.92), 'JPEG', m, m, imgW, h * scale);
+          y += h; first = false;
+        }
+      }
+      return pdf.output('blob');
+    } finally { host.remove(); }
+  }
+  async function doExport(kind, ctx, btn) {
+    const old = btn.textContent; btn.disabled = true; btn.textContent = 'جارٍ التجهيز…';
+    try {
+      if (kind === 'report-xlsx') await saveFile(safeName(ctx.rep.title) + '.xlsx', xlsxFrom([ctx.rep]));
+      else if (kind === 'report-pdf') await saveFile(safeName(ctx.rep.title) + '.pdf', await pdfFrom([renderReportHtml(ctx.rep)]));
+      else if (kind === 'student-xlsx') { const m = studentReportModel(ctx.s, ctx.ws); m.sheet = ctx.s.name; await saveFile(safeName(m.title) + '.xlsx', xlsxFrom([m])); }
+      else if (kind === 'student-pdf') { const m = studentReportModel(ctx.s, ctx.ws); await saveFile(safeName(m.title) + '.pdf', await pdfFrom([renderReportHtml(m)])); }
+      else if (kind === 'all-students-pdf' || kind === 'all-students-xlsx') {
+        const ws = st.ui.report.week || selWeek();
+        const models = scopeList().map((s) => { const m = studentReportModel(s, ws); m.sheet = s.name; return m; });
+        const name = `تقارير الطلاب · ${scopeName()} · ${weekLabel(ws)}`;
+        if (kind === 'all-students-pdf') await saveFile(safeName(name) + '.pdf', await pdfFrom(models.map(renderReportHtml)));
+        else await saveFile(safeName(name) + '.xlsx', xlsxFrom(models));
+      }
+    } catch (e) { console.error(e); toast('تعذّر التصدير: ' + (e.message || '')); }
+    finally { btn.disabled = false; btn.textContent = old; }
+  }
+
+  /* ---------------- settings ---------------- */
+  const SYNC_PRESETS = [
+    { cron: 'CRON_TZ=Asia/Riyadh 41 17,21 * * 0-4', l: 'مرتين يوميًا (5:41 م و9:41 م) من الأحد إلى الخميس' },
+    { cron: 'CRON_TZ=Asia/Riyadh 41 21 * * 0-4', l: 'مرة يوميًا 9:41 م من الأحد إلى الخميس' },
+    { cron: 'CRON_TZ=Asia/Riyadh 0 */3 * * 0-4', l: 'كل 3 ساعات من الأحد إلى الخميس' },
+    { cron: 'CRON_TZ=Asia/Riyadh 0 */6 * * *', l: 'كل 6 ساعات طوال الأسبوع' },
+    { cron: 'CRON_TZ=Asia/Riyadh 41 21 * * *', l: 'مرة يوميًا 9:41 م طوال الأسبوع' }
+  ];
+  function viewSettings(root) {
+    const S = st.S, r = st.roster || { students: [], halaqat: [], groups: [] };
+    const ro = st.canEdit ? '' : 'disabled';
+    const attKeys = Object.keys(S.attendance);
+    root.innerHTML = `
+      ${st.canEdit ? '' : '<div class="banner info">لديك صلاحية العرض فقط؛ التعديل متاح لمالك اللوحة ومحرريها.</div>'}
+      <div class="section-title"><h2>الطلاب والحلقات والمجموعات</h2></div>
+      <div class="panel">
+        <p class="help">عدّل الأسماء والروابط والتصنيفات، أو أضف طالبًا جديدًا. الحلقة والمجموعة تصنيفان مستقلان. عند تغيير الروابط تُحدَّث مهمة المزامنة تلقائيًا.</p>
+        <div class="tablewrap"><table class="rowedit"><thead><tr><th>الاسم الثلاثي</th><th>الحلقة</th><th>مجموعة نمو</th><th>رابط سجل خليل</th><th>نشط</th></tr></thead><tbody id="rosterBody">
+          ${r.students.map((s, i) => rosterRow(s, i, r, ro)).join('')}
+        </tbody></table></div>
+        <div class="form-grid" style="margin-top:12px">
+          <div class="field"><label for="halaqatTxt">أسماء الحلقات (سطر لكل حلقة)</label><textarea id="halaqatTxt" ${ro} style="min-height:80px">${esc(r.halaqat.join('\n'))}</textarea></div>
+          <div class="field"><label for="groupsTxt">مجموعات نمو (سطر لكل مجموعة)</label><textarea id="groupsTxt" ${ro} style="min-height:80px">${esc(r.groups.join('\n'))}</textarea></div>
+        </div>
+        ${st.canEdit ? '<div class="actions"><button class="btn" type="button" id="addStudent">إضافة طالب</button><button class="btn primary" type="button" id="saveRoster">حفظ الطلاب</button></div>' : ''}
+      </div>
+
+      <div class="section-title"><h2>الدرجات وسياسات الاحتساب</h2></div>
+      <div class="panel">
+        <div class="field"><label>أيام الحلقة</label><div class="daypick">${E.DAY_NAMES.map((d, i) => `<label><input type="checkbox" data-day="${i}" ${S.studyDays.includes(i) ? 'checked' : ''} ${ro}> ${d}</label>`).join('')}</div></div>
+        <div class="form-grid" style="margin-top:12px">
+          <div class="field"><label for="pAtt">نقاط الحضور اليومية</label><input id="pAtt" type="number" min="0" max="20" step="0.5" value="${S.points.att}" ${ro}></div>
+          <div class="field"><label for="pHifz">نقاط الحفظ اليومية</label><input id="pHifz" type="number" min="0" max="20" step="0.5" value="${S.points.hifz}" ${ro}></div>
+          <div class="field"><label for="pRev">نقاط المراجعة أو التثبيت</label><input id="pRev" type="number" min="0" max="20" step="0.5" value="${S.points.rev}" ${ro}></div>
+          <div class="field"><label for="revPol">عند وجود المراجعة والتثبيت معًا</label><select id="revPol" ${ro}>
+            ${[['avg', 'متوسط النسبتين'], ['max', 'الأعلى منهما'], ['min', 'الأقل منهما'], ['review_first', 'المراجعة أولًا'], ['tathbit_first', 'التثبيت أولًا']].map(([k, l]) => `<option value="${k}" ${S.revPolicy === k ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
+          <div class="field"><label for="missPol">حاضر والنشاط مطلوب ولم يُسجَّل تسميع</label><select id="missPol" ${ro}>
+            <option value="zero" ${S.missingEntry === 'zero' ? 'selected' : ''}>يُحتسب صفرًا (مطابق لمنصة خليل)</option>
+            <option value="skip" ${S.missingEntry === 'skip' ? 'selected' : ''}>لا يُحتسب في ذلك اليوم</option></select></div>
+        </div>
+        <h3 style="margin-top:16px">سياسة الحضور</h3>
+        <div class="tablewrap"><table class="rowedit"><thead><tr><th>الحالة في منصة خليل</th><th>المعاملة</th><th>نقاط الحضور</th></tr></thead><tbody>
+          ${attKeys.map((k) => `<tr><td>${esc(k)}</td><td><select data-attmode="${esc(k)}" ${ro}><option value="points" ${S.attendance[k].mode === 'points' ? 'selected' : ''}>يُحتسب بالنقاط</option><option value="exclude" ${S.attendance[k].mode === 'exclude' ? 'selected' : ''}>يُستبعد اليوم من الاحتساب</option></select></td><td><input type="number" data-attpts="${esc(k)}" min="0" max="20" step="0.5" value="${S.attendance[k].points}" ${ro}></td></tr>`).join('')}
+        </tbody></table></div>
+        <p class="help" style="margin-top:8px">«غائب» يحصل على صفر في المعايير الثلاثة. «يُستبعد» يعني أن اليوم لا يدخل في الحساب لهذا الطالب (كالإجازة).</p>
+        <h3 style="margin-top:16px">حدود التنبيه</h3>
+        <div class="form-grid">
+          ${[['weekLow', 'الحد المقبول للدرجة الأسبوعية /60'], ['critical', 'حد المتابعة العاجلة /60'], ['absenceRepeat', 'عدد أيام الغياب المتكرر'], ['absenceWindowWeeks', 'خلال آخر (أسابيع)'], ['changeNotable', 'تغيّر ملحوظ (نقاط)'], ['criterionExcellent', 'معيار «ممتاز» من 20'], ['criterionGood', 'معيار «جيد جدًا» من 20'], ['criterionWeak', 'أقل من هذا «يحتاج متابعة»']].map(([k, l]) => `<div class="field"><label for="th_${k}">${l}</label><input id="th_${k}" type="number" step="0.5" value="${S.thresholds[k]}" ${ro}></div>`).join('')}
+        </div>
+        ${st.canEdit ? '<div class="actions"><button class="btn primary" type="button" id="saveScoring">حفظ إعدادات الاحتساب</button></div>' : ''}
+      </div>
+
+      <div class="section-title"><h2>العطلات والإجازات</h2></div>
+      <div class="panel">
+        <p class="help">أيام «إجازة» في منصة خليل تُعتمد تلقائيًا. أضف هنا أي عطلة رسمية إضافية لتُستبعد من الاحتساب لجميع الطلاب.</p>
+        <div class="actions" style="margin-top:0">${(S.holidays || []).sort().map((h) => `<span class="chip info">${esc(greg(h))} · ${esc(hijri(h, true))} ${st.canEdit ? `<button class="btn ghost small" type="button" data-delhol="${h}" aria-label="حذف">×</button>` : ''}</span>`).join('') || '<span class="muted small">لا توجد عطلات إضافية</span>'}</div>
+        ${st.canEdit ? '<div class="actions"><input type="date" id="holDate"><input type="text" id="holNote" placeholder="سبب العطلة (اختياري)"><button class="btn" type="button" id="addHol">إضافة عطلة</button></div>' : ''}
+      </div>
+
+      <div class="section-title"><h2>التحديث التلقائي</h2></div>
+      <div class="panel">
+        <p class="help">تقرأ مهمة مجدولة سجلات الطلاب من منصة خليل وتحفظها في قاعدة بيانات اللوحة دون تكرار، وتحتفظ بآخر بيانات صحيحة عند تعذّر الاتصال.</p>
+        <div class="field"><label for="cronSel">فترة التحديث</label><select id="cronSel" ${ro}>${SYNC_PRESETS.map((p) => `<option value="${esc(p.cron)}" ${S.sync && S.sync.cron === p.cron ? 'selected' : ''}>${esc(p.l)}</option>`).join('')}</select></div>
+        ${st.canEdit ? '<div class="actions"><button class="btn primary" type="button" id="saveCron">حفظ الفترة</button></div>' : ''}
+        <h3 style="margin-top:16px">سجل المزامنة</h3>
+        <div class="tablewrap"><table><thead><tr><th>الوقت</th><th>النتيجة</th><th>الصفحات المقروءة</th><th>السجلات المحدّثة</th><th>المصدر</th></tr></thead><tbody>
+          ${((st.sync || {}).log || []).map((l) => `<tr><td>${l.at ? esc(timeFmt.format(new Date(l.at))) : '—'}</td><td>${esc({ ok: 'ناجحة', partial: 'جزئية', failed: 'فشلت' }[l.status] || l.status || '')}</td><td class="n">${esc(l.fetched ?? '')}</td><td class="n">${esc(l.written ?? '')}</td><td>${esc({ scheduled: 'مجدولة', manual: 'يدوية', backfill: 'تحميل السجل السابق' }[l.trigger] || l.trigger || '')}</td></tr>`).join('') || '<tr><td colspan="5" class="empty">لا توجد مزامنة بعد</td></tr>'}
+        </tbody></table></div>
+        ${((st.sync || {}).errors || []).length ? `<p class="help" style="margin-top:8px;color:var(--warn)">أخطاء آخر مزامنة: ${esc(st.sync.errors.map((e) => `${e.name || e.sid}${e.week ? ' (' + e.week + ')' : ''}: ${e.message}`).join(' · '))}</p>` : ''}
+      </div>
+
+      <div class="section-title"><h2>الفصل الدراسي والأرشيف</h2></div>
+      <div class="panel">
+        <div class="form-grid">
+          <div class="field"><label for="semName">اسم الفصل الحالي</label><input id="semName" type="text" value="${esc(S.semester.name)}" ${ro}></div>
+          <div class="field"><label for="semStart">تاريخ بدايته</label><input id="semStart" type="date" value="${esc(S.semester.start)}" ${ro}></div>
+          <div class="field"><label for="semWeeks">عدد أسابيعه</label><input id="semWeeks" type="number" min="1" max="30" value="${esc(S.semester.weeks)}" ${ro}></div>
+        </div>
+        <p class="help">الأرشيف: ${(S.archive || []).map((a) => esc(`${a.name} (${a.start} – ${a.end})`)).join('، ') || 'لا توجد فصول مؤرشفة'}. البيانات المؤرشفة تبقى محفوظة ويمكن عرضها من قائمة «الفصل» أعلى اللوحة.</p>
+        ${st.canEdit ? '<div class="actions"><button class="btn primary" type="button" id="saveSem">حفظ بيانات الفصل</button><button class="btn" type="button" id="archiveSem">أرشفة الفصل وبدء فصل جديد</button></div>' : ''}
+      </div>
+
+      <div class="section-title"><h2>سجل التعديلات اليدوية</h2><span class="sub">كل تعديل على الدرجات أو الإعدادات أو الملاحظات</span></div>
+      <div class="tablewrap"><table><thead><tr><th>الوقت</th><th>الإجراء</th><th>العنصر</th><th>قبل</th><th>بعد</th><th>السبب</th><th>بواسطة</th></tr></thead><tbody>
+        ${st.audit.slice(0, 150).map((x) => `<tr><td>${esc(timeFmt.format(new Date(x.at)))}</td><td>${esc(AUDIT_LABEL[x.action] || x.action)}</td><td>${esc(x.target || '')}</td><td class="small">${esc(short(x.before))}</td><td class="small">${esc(short(x.after))}</td><td class="small">${esc(x.reason || '')}</td><td class="small">${x.by === st.myId ? 'أنت' : esc(x.byName || 'مشرف')}</td></tr>`).join('') || '<tr><td colspan="7" class="empty">لا توجد تعديلات بعد</td></tr>'}
+      </tbody></table></div>
+      ${methodNote()}`;
+    if (!st.canEdit) return;
+    bindSettings(root);
+  }
+  const AUDIT_LABEL = { override: 'تعديل درجة', 'override-remove': 'إلغاء تعديل درجة', note: 'ملاحظة مشرف', roster: 'تعديل الطلاب', scoring: 'إعدادات الاحتساب', holiday: 'عطلة', sync: 'فترة التحديث', semester: 'الفصل الدراسي' };
+  function short(v) { if (v === null || v === undefined) return ''; const s = typeof v === 'string' ? v : JSON.stringify(v); return s.length > 80 ? s.slice(0, 80) + '…' : s; }
+  function rosterRow(s, i, r, ro) {
+    return `<tr data-i="${i}"><td><input type="text" data-f="name" value="${esc(s.name)}" ${ro} aria-label="الاسم"></td>
+      <td><select data-f="halaqa" ${ro} aria-label="الحلقة">${r.halaqat.map((h) => `<option ${h === s.halaqa ? 'selected' : ''}>${esc(h)}</option>`).join('')}</select></td>
+      <td><select data-f="group" ${ro} aria-label="المجموعة">${r.groups.map((h) => `<option ${h === s.group ? 'selected' : ''}>${esc(h)}</option>`).join('')}</select></td>
+      <td><input type="url" data-f="url" value="${esc(s.url)}" ${ro} dir="ltr" aria-label="الرابط"></td>
+      <td><input type="checkbox" data-f="active" ${s.active !== false ? 'checked' : ''} ${ro} aria-label="نشط"></td></tr>`;
+  }
+  async function saveSettings(patch, action, target, reason) {
+    const before = JSON.parse(JSON.stringify(st.settingsDoc || {}));
+    const next = Object.assign({}, before, patch);
+    if (await writeDoc('config/settings', next)) {
+      const b = {}, a = {}; Object.keys(patch).forEach((k) => { b[k] = before[k]; a[k] = patch[k]; });
+      audit(action, target, b, a, reason); toast('حُفظت الإعدادات'); return true;
+    }
+    return false;
+  }
+  function bindSettings(root) {
+    const r = st.roster;
+    $('#addStudent', root).addEventListener('click', () => {
+      const tb = $('#rosterBody', root);
+      const tr = document.createElement('tbody');
+      tr.innerHTML = rosterRow({ name: '', halaqa: r.halaqat[0], group: r.groups[0], url: 'https://khlel.com/', active: true }, tb.children.length, r, '');
+      tb.appendChild(tr.firstElementChild);
+      tb.lastElementChild.querySelector('input').focus();
+    });
+    $('#saveRoster', root).addEventListener('click', async () => {
+      const halaqat = $('#halaqatTxt', root).value.split('\n').map((x) => x.trim()).filter(Boolean);
+      const groups = $('#groupsTxt', root).value.split('\n').map((x) => x.trim()).filter(Boolean);
+      const list = [];
+      for (const tr of $$('#rosterBody tr', root)) {
+        const g = (f) => tr.querySelector(`[data-f="${f}"]`);
+        const name = g('name').value.trim(), url = g('url').value.trim();
+        if (!name && (url === '' || url === 'https://khlel.com/')) continue;
+        const m = url.match(/^https:\/\/khlel\.com\/(\d+)\/achievement-record\/?$/);
+        if (!name || !m) { toast(`تحقق من الاسم والرابط في السطر ${Number(tr.dataset.i) + 1}؛ الرابط بصيغة https://khlel.com/رقم/achievement-record`, 6000); return; }
+        const old = r.students[Number(tr.dataset.i)];
+        list.push({ id: m[1], name, halaqa: g('halaqa').value, group: g('group').value, url: `https://khlel.com/${m[1]}/achievement-record`, active: g('active').checked, ...(old && old.id !== m[1] ? { previousId: old.id } : {}) });
+      }
+      const ids = list.map((s) => s.id); if (new Set(ids).size !== ids.length) { toast('يوجد رابط مكرر لطالبين'); return; }
+      const next = { halaqat, groups, students: list.map((s) => ({ ...s, halaqa: halaqat.includes(s.halaqa) ? s.halaqa : halaqat[0], group: groups.includes(s.group) ? s.group : groups[0] })) };
+      const before = JSON.parse(JSON.stringify(r));
+      if (!(await writeDoc('config/roster', next))) return;
+      audit('roster', 'قائمة الطلاب', summarizeRoster(before), summarizeRoster(next));
+      toast('حُفظت قائمة الطلاب');
+      const oldUrls = before.students.filter((s) => s.active !== false).map((s) => s.url).sort().join();
+      const newUrls = next.students.filter((s) => s.active !== false).map((s) => s.url).sort().join();
+      if (oldUrls !== newUrls) await pushSyncPrompt(next);
+    });
+    const P = () => ({ att: Number($('#pAtt', root).value), hifz: Number($('#pHifz', root).value), rev: Number($('#pRev', root).value) });
+    $('#saveScoring', root).addEventListener('click', () => {
+      const points = P();
+      if (Object.values(points).some((x) => isNaN(x) || x < 0)) { toast('قيم النقاط غير صحيحة'); return; }
+      const studyDays = $$('[data-day]', root).filter((c) => c.checked).map((c) => Number(c.dataset.day));
+      if (!studyDays.length) { toast('اختر يومًا واحدًا على الأقل'); return; }
+      const attendance = {}; Object.keys(st.S.attendance).forEach((k) => { attendance[k] = { mode: $(`[data-attmode="${CSS.escape(k)}"]`, root).value, points: Math.min(points.att, Number($(`[data-attpts="${CSS.escape(k)}"]`, root).value) || 0) }; });
+      const thresholds = {}; Object.keys(st.S.thresholds).forEach((k) => { thresholds[k] = Number($('#th_' + k, root).value); });
+      saveSettings({ points, studyDays, attendance, thresholds, revPolicy: $('#revPol', root).value, missingEntry: $('#missPol', root).value }, 'scoring', 'إعدادات الاحتساب');
+    });
+    $('#addHol', root).addEventListener('click', () => {
+      const d = $('#holDate', root).value; if (!d) { toast('اختر التاريخ'); return; }
+      const hol = Array.from(new Set((st.S.holidays || []).concat([d]))).sort();
+      saveSettings({ holidays: hol }, 'holiday', d, $('#holNote', root).value.trim() || 'عطلة رسمية');
+    });
+    $$('[data-delhol]', root).forEach((b) => b.addEventListener('click', () => saveSettings({ holidays: (st.S.holidays || []).filter((h) => h !== b.dataset.delhol) }, 'holiday', b.dataset.delhol, 'حذف عطلة')));
+    $('#saveCron', root).addEventListener('click', async (e) => {
+      const cron = $('#cronSel', root).value;
+      const tid = st.S.sync && st.S.sync.triggerId;
+      if (!st.mcp || !tid) { toast('تعديل الجدول غير متاح في هذا العرض'); return; }
+      e.currentTarget.disabled = true;
+      try {
+        await st.mcp.callTool(REMOTE, 'update_trigger', { trigger_id: tid, cron_expression: cron }, { cache: false });
+        await saveSettings({ sync: Object.assign({}, st.S.sync, { cron }) }, 'sync', 'فترة التحديث');
+      } catch (err) { toast('تعذّر تعديل جدول المزامنة: ' + ((err && err.message) || '')); }
+      finally { e.currentTarget.disabled = false; }
+    });
+    $('#saveSem', root).addEventListener('click', () => {
+      const semester = { name: $('#semName', root).value.trim(), start: $('#semStart', root).value, weeks: Number($('#semWeeks', root).value) || 19 };
+      if (!semester.name || !semester.start) { toast('أدخل اسم الفصل وتاريخ بدايته'); return; }
+      saveSettings({ semester }, 'semester', semester.name);
+    });
+    $('#archiveSem', root).addEventListener('click', () => {
+      dialog(`<h3>أرشفة الفصل الحالي</h3><p class="help">يُنقل «${esc(st.S.semester.name)}» إلى الأرشيف بتاريخ انتهاء اليوم، وتبقى جميع بياناته محفوظة. أدخل بيانات الفصل الجديد:</p>
+        <div class="form-grid"><div class="field"><label for="nsName">اسم الفصل الجديد</label><input id="nsName" type="text"></div><div class="field"><label for="nsStart">تاريخ بدايته</label><input id="nsStart" type="date"></div></div>
+        <div class="actions"><button class="btn primary" type="button" id="nsGo">أرشفة وبدء الفصل الجديد</button><button class="btn" type="button" data-close>إلغاء</button></div>`, (dlg, close) => {
+        $('#nsGo', dlg).addEventListener('click', async () => {
+          const name = $('#nsName', dlg).value.trim(), start = $('#nsStart', dlg).value;
+          if (!name || !start) { toast('أدخل الاسم والتاريخ'); return; }
+          const archive = (st.S.archive || []).concat([{ name: st.S.semester.name, start: st.S.semester.start, end: E.addDays(start, -1) }]);
+          if (await saveSettings({ archive, semester: { name, start, weeks: st.S.semester.weeks } }, 'semester', 'أرشفة ' + st.S.semester.name)) close();
+        });
+      });
+    });
+  }
+  function summarizeRoster(r) { return { عدد_الطلاب: r.students.length, الحلقات: r.halaqat, المجموعات: r.groups, الطلاب: r.students.map((s) => `${s.name} | ${s.halaqa} | ${s.group} | ${s.id}${s.active === false ? ' | غير نشط' : ''}`) }; }
+  async function pushSyncPrompt(roster) {
+    const tid = st.S.sync && st.S.sync.triggerId;
+    if (!st.mcp || !tid) { toast('حُفظت الروابط، لكن تعذّر تحديث مهمة المزامنة من هذا العرض', 6000); return; }
+    const urls = roster.students.filter((s) => s.active !== false).map((s) => s.url).join('\n');
+    try {
+      await st.mcp.callTool(REMOTE, 'update_trigger', { trigger_id: tid, prompt: SYNC_TEMPLATE.replace('{{URLS}}', urls) }, { cache: false });
+      toast('حُدّثت مهمة المزامنة بالروابط الجديدة، وستُحمَّل سجلات الطلاب الجدد في المزامنة القادمة', 6000);
+    } catch (e) { toast('حُفظت الروابط، لكن تعذّر تحديث مهمة المزامنة: ' + ((e && e.message) || ''), 7000); }
+  }
+
+  /* ---------------- render ---------------- */
+  const VIEWS = { overview: viewOverview, students: viewStudents, student: viewStudent, alerts: viewAlerts, reports: viewReports, settings: viewSettings };
+  let rafPending = false;
+  function scheduleRender() { if (rafPending) return; rafPending = true; requestAnimationFrame(() => { rafPending = false; rebuild(); render(); }); }
+  function render() {
+    const main = $('#main');
+    renderHeader();
+    if (st.static) { const stt = $('.tab[data-view="settings"]'); if (stt) stt.hidden = true; if (st.ui.view === 'settings') st.ui.view = 'overview'; }
+    $$('.tab').forEach((t) => t.setAttribute('aria-selected', String(t.dataset.view === st.ui.view || (st.ui.view === 'student' && t.dataset.view === 'students'))));
+    killCharts();
+    if (st.dbState === 'none') { main.innerHTML = `<div class="loading"><p><b>لا يمكن الوصول إلى بيانات الطلاب من هذا العرض.</b></p><p>بيانات اللوحة خاصة بالمشرف؛ افتحها من حسابك في Claude.</p></div>`; return; }
+    if (!st.loaded.roster || !st.loaded.weeks || !st.loaded.settings) { main.innerHTML = '<div class="loading">جارٍ تحميل بيانات الطلاب…</div>'; return; }
+    if (!cache) rebuild();
+    const scrollY = window.scrollY;
+    (VIEWS[st.ui.view] || viewOverview)(main);
+    if (st.keepScroll) window.scrollTo(0, scrollY);
+    st.keepScroll = true;
+  }
+  function go(view) { if (view !== 'student') st.ui.prevView = view; st.ui.view = view; st.keepScroll = false; window.scrollTo(0, 0); render(); }
+
+  document.addEventListener('click', (e) => {
+    const t = e.target.closest('[data-open-student]');
+    if (t) { st.ui.prevView = st.ui.view === 'student' ? st.ui.prevView : st.ui.view; st.ui.student = t.dataset.openStudent; st.ui.view = 'student'; st.keepScroll = false; window.scrollTo(0, 0); render(); return; }
+    const g = e.target.closest('[data-goto]'); if (g) { go(g.dataset.goto); return; }
+    const tab = e.target.closest('.tab'); if (tab) { go(tab.dataset.view); }
+  });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Enter') { const t = e.target.closest && e.target.closest('tr[data-open-student]'); if (t) t.click(); } });
+
+  /* ---------------- boot ---------------- */
+  async function boot() {
+    const h = (location.hash || '').slice(1);
+    if (VIEWS[h] && h !== 'student') { st.ui.view = h; st.ui.prevView = h; }
+    try { const saved = JSON.parse(localStorage.getItem('numow-ui') || '{}'); if (saved.mode) st.ui.mode = saved.mode; } catch (e) { }
+    render();
+    if (st.static) await window.NUMOW_UNLOCKED;
+    const cl = window.claude;
+    if (!cl || !cl.use) { st.dbState = 'none'; render(); return; }
+    const [db, user, mcp, dl, sample] = await Promise.all(['db', 'user', 'mcp', 'downloads', 'sample'].map((n) => cl.use(n).catch(() => null)));
+    st.mcp = mcp; st.dl = dl; st.sample = sample; st.user = user;
+    if (!db) { st.dbState = 'none'; render(); return; }
+    st.db = db; st.dbState = 'ok';
+    if (user) {
+      try { st.myId = await user.id(); } catch (e) { }
+      try { st.canEdit = !!(user.isOwner() || user.canEdit()); } catch (e) { }
+    }
+    const fail = (what) => (err) => { console.error(what, err); if (err && err.code === 'revoked') { st.dbState = 'none'; render(); } };
+    db.doc('config/roster').onSnapshot((s) => { st.roster = s.exists ? s.data() : { students: [], halaqat: [], groups: [] }; st.loaded.roster = true; scheduleRender(); }, fail('roster'));
+    db.doc('config/settings').onSnapshot((s) => { st.settingsDoc = s.exists ? s.data() : {}; st.S = E.mergeSettings(st.settingsDoc); st.loaded.settings = true; scheduleRender(); }, fail('settings'));
+    db.doc('meta/sync').onSnapshot((s) => {
+      const prev = st.sync; st.sync = s.exists ? s.data() : null; st.loaded.sync = true;
+      if (st.syncRequestedAt && prev && st.sync && st.sync.lastAttemptAt !== prev.lastAttemptAt) { toast(st.sync.status === 'ok' ? 'اكتملت المزامنة مع منصة خليل' : st.sync.status === 'partial' ? 'اكتملت المزامنة جزئيًا' : 'تعذّرت المزامنة؛ البيانات السابقة محفوظة', 6000); st.syncRequestedAt = null; }
+      scheduleRender();
+    }, fail('sync'));
+    db.collection('weeks').limit(1000).onSnapshot((q) => { st.weeks = new Map(q.docs.map((d) => [d.id, d.data()])); st.loaded.weeks = true; scheduleRender(); }, fail('weeks'));
+    db.collection('notes').limit(500).onSnapshot((q) => { st.notes = new Map(q.docs.map((d) => [d.id, d.data()])); scheduleRender(); }, fail('notes'));
+    db.collection('overrides').limit(1000).onSnapshot((q) => { st.overrides = new Map(q.docs.map((d) => [d.id, d.data()])); scheduleRender(); }, fail('overrides'));
+    db.collection('audit').orderBy('at', 'desc').limit(300).onSnapshot((q) => { st.audit = q.docs.map((d) => d.data()); if (st.ui.view === 'settings') scheduleRender(); }, fail('audit'));
+    setInterval(() => { if (document.visibilityState === 'visible') renderHeader(); }, 60000);
+  }
+  window.addEventListener('beforeunload', () => { try { localStorage.setItem('numow-ui', JSON.stringify({ mode: st.ui.mode })); } catch (e) { } });
+
+  const SYNC_TEMPLATE = window.NUMOW_SYNC_TEMPLATE || '';
+  boot();
+})();
+
+</script>
+</body>
+</html>
