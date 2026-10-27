@@ -440,6 +440,7 @@ details.method ol, details.method ul { padding-inline-start: 20px; margin: 8px 0
     revPolicy: 'avg',          // avg | max | min | review_first | tathbit_first
     revScoring: 'any',         // any = any recitation earns full points | proportional = by achievement ratio
     hifzScoring: 'any',        // same choice for memorization
+    totalMode: 'actual',       // actual = points recorded so far | standard = scaled to 60 over the days held
     missingEntry: 'zero',      // zero | skip   (present, activity required, nothing recited)
     holidays: [],              // extra holiday dates YYYY-MM-DD
     thresholds: { weekLow: 45, critical: 36, absenceRepeat: 2, absenceWindowWeeks: 4, changeNotable: 6, criterionWeak: 14, criterionGood: 16, criterionExcellent: 18 }
@@ -628,19 +629,21 @@ details.method ol, details.method ul { padding-inline-start: 20px; margin: 8px 0
     for (const c of CRITERIA) {
       const a = agg[c];
       const critMax = P[c] * 4;   // a regular four-day week
-      crit[c] = { earned: round2(a.earned), max: a.max, std: a.max > 0 ? round2(a.earned / a.max * critMax) : null, stdMax: critMax };
+      const rate20 = a.max > 0 ? round2(a.earned / a.max * critMax) : null;
+      crit[c] = { earned: round2(a.earned), max: a.max, rate20, std: a.max > 0 ? (settings.totalMode === 'standard' ? rate20 : round2(a.earned)) : null, stdMax: critMax };
       if (crit[c].std !== null) { stdSum += crit[c].std; stdMax += critMax; }
     }
     const fullWeek = (P.att + P.hifz + P.rev) * 4;
     const actualEarned = round2(CRITERIA.reduce((s, c) => s + agg[c].earned, 0));
     const actualMax = CRITERIA.reduce((s, c) => s + agg[c].max, 0);
-    const total = stdMax > 0 ? round2(stdSum / stdMax * fullWeek) : null;
+    const rate60 = stdMax > 0 ? round2(CRITERIA.reduce((x, c) => x + (crit[c].rate20 || 0), 0) / stdMax * fullWeek) : null;
+    const total = stdMax > 0 ? (settings.totalMode === 'standard' ? rate60 : round2(CRITERIA.reduce((x, c) => x + agg[c].earned, 0))) : null;
     const lastStudy = days.filter((d) => settings.studyDays.includes(d.weekday)).map((d) => d.g).sort().pop() || doc.weekStart;
     const complete = pending === 0 && lastStudy <= today && actualMax > 0;
     if (total !== null && total > fullWeek + 1e-9) throw new Error('weekly score above maximum');
     if (actualEarned > fullWeek + 1e-9) throw new Error('weekly actual above maximum');
     return {
-      sid: doc.sid, weekStart: doc.weekStart, days, crit, total, totalMax: fullWeek, actualEarned, actualMax,
+      sid: doc.sid, weekStart: doc.weekStart, days, crit, total, rate60, totalMax: fullWeek, actualEarned, actualMax,
       complete, hasData: actualMax > 0, pending, studyDays, holidays, absent, late, excused, present,
       attendanceRate: (present + absent) > 0 ? present / (present + absent) : null,
       issues: doc.issues || [], fetchedAt: doc.fetchedAt || null
@@ -682,32 +685,37 @@ details.method ol, details.method ul { padding-inline-start: 20px; margin: 8px 0
     res.excused = withData.reduce((s, w) => s + w.excused, 0);
     if (!cur) return res;
 
-    const lost = CRITERIA.filter((c) => cur.crit[c].std !== null).map((c) => ({ c, lost: round2(cur.crit[c].stdMax - cur.crit[c].std), std: cur.crit[c].std, max: cur.crit[c].stdMax }));
+    const actualMode = settings.totalMode !== 'standard';
+    const lost = CRITERIA.filter((c) => cur.crit[c].std !== null).map((c) => actualMode
+      ? ({ c, lost: round2(cur.crit[c].max - cur.crit[c].earned), std: cur.crit[c].earned, max: cur.crit[c].max })
+      : ({ c, lost: round2(cur.crit[c].stdMax - cur.crit[c].std), std: cur.crit[c].std, max: cur.crit[c].stdMax }));
     lost.sort((a, b) => b.lost - a.lost);
     if (lost.length && lost[0].lost > 0.5) res.weakest = lost[0];
     const strong = lost.slice().sort((a, b) => a.lost - b.lost)[0];
     if (strong) res.strongest = strong;
-    if (prev && cur.total !== null && prev.total !== null) res.delta = round2(cur.total - prev.total);
+    const comparable = !actualMode || (cur.complete && prev && prev.complete);
+    if (prev && cur.total !== null && prev.total !== null && comparable) res.delta = round2(cur.total - prev.total);
 
     // per-criterion change vs previous week
     res.critDelta = {};
-    if (prev) for (const c of CRITERIA) if (cur.crit[c].std !== null && prev.crit[c].std !== null) res.critDelta[c] = round2(cur.crit[c].std - prev.crit[c].std);
+    if (prev && comparable) for (const c of CRITERIA) if (cur.crit[c].std !== null && prev.crit[c].std !== null) res.critDelta[c] = round2(cur.crit[c].std - prev.crit[c].std);
 
     // repeated decline: total fell in each of the last two comparisons
     const tail = withData.slice(Math.max(0, idx - 2), idx + 1).filter((w) => w.total !== null);
-    res.decliningStreak = tail.length === 3 && tail[2].total < tail[1].total && tail[1].total < tail[0].total;
+    res.decliningStreak = tail.length === 3 && tail.every((x) => !actualMode || x.complete) && tail[2].total < tail[1].total && tail[1].total < tail[0].total;
     // same criterion weak two weeks in a row
     res.repeatWeak = [];
     if (prev) for (const c of CRITERIA) {
-      const a = cur.crit[c].std, b = prev.crit[c].std;
-      if (a !== null && b !== null && a / cur.crit[c].stdMax * 20 < th.criterionWeak && b / prev.crit[c].stdMax * 20 < th.criterionWeak) res.repeatWeak.push(c);
+      const a = cur.crit[c].rate20, b = prev.crit[c].rate20;
+      if (a !== null && b !== null && a < th.criterionWeak && b < th.criterionWeak) res.repeatWeak.push(c);
     }
     // absences in the recent window
     const win = withData.slice(Math.max(0, idx - th.absenceWindowWeeks + 1), idx + 1);
     res.recentAbsences = win.reduce((s, w) => s + w.absent, 0);
 
-    if (cur.total !== null && cur.total < th.critical) res.alerts.push({ level: 'critical', code: 'critical', text: `الدرجة ${fmt(cur.total)}/60 أقل من حد المتابعة العاجلة (${th.critical})` });
-    else if (cur.total !== null && cur.total < th.weekLow) res.alerts.push({ level: 'warn', code: 'low', text: `الدرجة ${fmt(cur.total)}/60 أقل من الحد المقبول (${th.weekLow})` });
+    const judged = !actualMode || cur.complete;
+    if (judged && cur.total !== null && cur.total < th.critical) res.alerts.push({ level: 'critical', code: 'critical', text: `الدرجة ${fmt(cur.total)}/60 أقل من حد المتابعة العاجلة (${th.critical})` });
+    else if (judged && cur.total !== null && cur.total < th.weekLow) res.alerts.push({ level: 'warn', code: 'low', text: `الدرجة ${fmt(cur.total)}/60 أقل من الحد المقبول (${th.weekLow})` });
     if (res.recentAbsences >= th.absenceRepeat) res.alerts.push({ level: res.recentAbsences >= th.absenceRepeat + 1 ? 'critical' : 'warn', code: 'absence', text: `غاب ${res.recentAbsences === 2 ? 'يومين' : res.recentAbsences + ' أيام'} خلال آخر ${win.length} أسابيع مرصودة` });
     if (res.decliningStreak) res.alerts.push({ level: 'warn', code: 'decline', text: 'تراجعت درجته أسبوعين متتاليين' });
     for (const c of res.repeatWeak) res.alerts.push({ level: 'warn', code: 'repeatWeak', text: `${CRIT_LABEL[c]} ضعيف أسبوعين متتاليين` });
@@ -726,8 +734,8 @@ details.method ol, details.method ul { padding-inline-start: 20px; margin: 8px 0
     const w = a.cur;
     if (!w) return { summary: `لا توجد بيانات مرصودة لـ${name} في الفترة المحددة.`, recommendation: '' };
     const parts = [];
-    const lv = {}; for (const c of CRITERIA) lv[c] = levelOf(w.crit[c].std, w.crit[c].stdMax, th);
-    const good = CRITERIA.filter((c) => w.crit[c].std !== null && ['excellent', 'vgood'].includes(lv[c].key)).map((c) => CRIT_LABEL[c]);
+    const lv = {}; for (const c of CRITERIA) lv[c] = levelOf(w.crit[c].rate20, 20, th);
+    const good = CRITERIA.filter((c) => w.crit[c].rate20 !== null && ['excellent', 'vgood'].includes(lv[c].key)).map((c) => CRIT_LABEL[c]);
     if (good.length) parts.push(`الطالب منتظم في ${joinAr(good)}`);
     if (a.weakest && a.weakest.lost >= 2) {
       parts.push(`${good.length ? 'لكن ' : ''}أبرز جوانب القصور لديه ${a.weakest.c === 'att' ? 'الحضور' : a.weakest.c === 'hifz' ? 'الحفظ' : 'المراجعة أو التثبيت'}؛ إذ فقد ${fmt(a.weakest.lost)} نقطة من أصل ${a.weakest.max} في هذا المعيار`);
@@ -898,12 +906,14 @@ details.method ol, details.method ul { padding-inline-start: 20px; margin: 8px 0
 
   /* ---------------- formatting helpers ---------------- */
   function cls20(v, max) { if (v === null || v === undefined) return ''; const x = v / (max || 20) * 20; const th = st.S.thresholds; return x >= th.criterionGood ? '' : x >= th.criterionWeak ? 'warn' : 'bad'; }
-  function clsTotal(t) { if (t === null || t === undefined) return ''; const th = st.S.thresholds; return t >= th.weekLow ? 'good' : t >= th.critical ? 'warn' : 'bad'; }
-  function cellBar(v, max) {
+  function clsTotal(t) { if (t && typeof t === 'object') t = t.hasData ? t.rate60 : null; if (t === null || t === undefined) return ''; const th = st.S.thresholds; return t >= th.weekLow ? 'good' : t >= th.critical ? 'warn' : 'bad'; }
+  const totSub = (w) => w && w.hasData && !w.complete && st.S.totalMode !== 'standard' ? `<small class="muted" title="النقاط الممكنة حتى الآن"> من ${w.actualMax}</small>` : '';
+  function cellBar(v, max, rate) {
     if (v === null || v === undefined) return '<span class="muted">—</span>';
     const p = Math.max(0, Math.min(100, v / max * 100));
-    return `<span class="cell-bar"><span class="num">${F(v)}</span><span class="minibar" aria-hidden="true"><i class="${cls20(v, max)}" style="width:${p}%"></i></span></span>`;
+    return `<span class="cell-bar"><span class="num">${F(v)}</span><span class="minibar" aria-hidden="true"><i class="${cls20(rate === undefined ? v : rate, max)}" style="width:${p}%"></i></span></span>`;
   }
+
   function deltaHtml(d) {
     if (d === null || d === undefined) return '<span class="delta flat">—</span>';
     if (Math.abs(d) < 0.05) return '<span class="delta flat">= 0</span>';
@@ -1068,10 +1078,10 @@ details.method ol, details.method ul { padding-inline-start: 20px; margin: 8px 0
       const d = r.a ? r.a.delta : null;
       return `<tr class="click" data-open-student="${esc(r.s.id)}" tabindex="0">
         <td class="name">${esc(r.s.name)}</td><td>${esc(r.s.halaqa)}</td><td>${esc((r.s.group || '').replace('مجموعة ', ''))}</td>
-        <td class="n">${cellBar(w && w.hasData ? w.crit.att.std : null, 20)}</td>
-        <td class="n">${cellBar(w && w.hasData ? w.crit.hifz.std : null, 20)}</td>
-        <td class="n">${cellBar(w && w.hasData ? w.crit.rev.std : null, 20)}</td>
-        <td class="n"><span class="tot ${clsTotal(r.total)}">${r.total === null ? '—' : F(r.total)}</span></td>
+        <td class="n">${cellBar(w && w.hasData ? w.crit.att.std : null, 20, w && w.hasData ? w.crit.att.rate20 : undefined)}</td>
+        <td class="n">${cellBar(w && w.hasData ? w.crit.hifz.std : null, 20, w && w.hasData ? w.crit.hifz.rate20 : undefined)}</td>
+        <td class="n">${cellBar(w && w.hasData ? w.crit.rev.std : null, 20, w && w.hasData ? w.crit.rev.rate20 : undefined)}</td>
+        <td class="n"><span class="tot ${clsTotal(r.w)}">${r.total === null ? '—' : F(r.total)}</span>${totSub(r.w)}</td>
         <td class="n">${deltaHtml(d)}</td>
         <td class="n">${weekStateChip(w)}</td></tr>`;
     }).join('');
@@ -1174,14 +1184,14 @@ details.method ol, details.method ul { padding-inline-start: 20px; margin: 8px 0
       </div>
 
       <div class="grid g2" style="margin-top:14px">
-        <div class="panel"><h3>أعلى خمسة طلاب أداءً <span class="hint">من 60</span></h3>${rankList(ranked.slice(0, 5), (r) => `<span class="tot ${clsTotal(r.total)}">${F(r.total)}</span>`)}</div>
-        <div class="panel"><h3>أقل خمسة طلاب أداءً <span class="hint">من 60</span></h3>${rankList(ranked.slice(-5).reverse(), (r) => `<span class="tot ${clsTotal(r.total)}">${F(r.total)}</span>`)}</div>
+        <div class="panel"><h3>أعلى خمسة طلاب أداءً <span class="hint">من 60</span></h3>${rankList(ranked.slice(0, 5), (r) => `<span class="tot ${clsTotal(r.w)}">${F(r.total)}</span>${totSub(r.w)}`)}</div>
+        <div class="panel"><h3>أقل خمسة طلاب أداءً <span class="hint">من 60</span></h3>${rankList(ranked.slice(-5).reverse(), (r) => `<span class="tot ${clsTotal(r.w)}">${F(r.total)}</span>${totSub(r.w)}`)}</div>
         <div class="panel"><h3>تحسّنوا عن أسبوعهم السابق <span class="hint">${improved.length}</span></h3>${rankList(improved.slice(0, 6), (r) => deltaHtml(r.a.delta))}</div>
         <div class="panel"><h3>تراجعوا عن أسبوعهم السابق <span class="hint">${declined.length}</span></h3>${rankList(declined.slice(0, 6), (r) => deltaHtml(r.a.delta))}</div>
       </div>
 
       <div class="panel" style="margin-top:14px"><h3>يحتاجون متابعة <button class="btn ghost small" data-goto="alerts" type="button">كل التنبيهات</button></h3>
-        ${follow.length ? `<ul class="alert-list">${follow.slice(0, 8).map((r) => `<li>${alertChip(r.a.alerts.find((x) => x.level !== 'good'))}<div><div class="who">${studentLink(r.s)}</div><div class="txt">${esc(r.a.alerts.filter((x) => x.level !== 'good').map((x) => x.text).join(' · '))}</div></div><span class="tot ${clsTotal(r.total)}">${F(r.total)}</span></li>`).join('')}</ul>` : '<p class="empty">لا يوجد طلاب تحت حدود التنبيه في هذا الأسبوع.</p>'}
+        ${follow.length ? `<ul class="alert-list">${follow.slice(0, 8).map((r) => `<li>${alertChip(r.a.alerts.find((x) => x.level !== 'good'))}<div><div class="who">${studentLink(r.s)}</div><div class="txt">${esc(r.a.alerts.filter((x) => x.level !== 'good').map((x) => x.text).join(' · '))}</div></div><span class="tot ${clsTotal(r.w)}">${F(r.total)}</span></li>`).join('')}</ul>` : '<p class="empty">لا يوجد طلاب تحت حدود التنبيه في هذا الأسبوع.</p>'}
         ${noData.length ? `<p class="help" style="margin-top:10px">لم تُرصد بيانات هذا الأسبوع لـ: ${noData.map((r) => esc(r.s.name)).join('، ')}</p>` : ''}
       </div>
 
@@ -1230,7 +1240,7 @@ details.method ol, details.method ul { padding-inline-start: 20px; margin: 8px 0
         <li>الحفظ: ${st.S.hifzScoring === 'any' ? `أي تسميع ولو بنسبة 1% يمنح الدرجة كاملة (${P.hifz})، وعدم التسميع صفر` : 'نسبة الإنجاز من المطلوب تتحول إلى درجة، ولا تتجاوز الحد الأعلى ولو تجاوز الإنجاز 100%'}.</li>
         ${st.S.revScoring === 'any' ? `<li>المراجعة أو التثبيت: أي تسميع ولو بنسبة 1% يمنح الدرجة كاملة (${P.rev})، وعدم التسميع صفر. وإذا وُجدت المراجعة والتثبيت في اليوم نفسه تُحتسب درجة واحدة فقط.</li>` : `<li>إذا وُجدت المراجعة والتثبيت في اليوم نفسه تُحتسب درجة واحدة للمعيار حسب السياسة الحالية: ${esc(pol)}.</li>`}
         <li>اليوم الذي لم يُرصد بعد لا يُحتسب صفرًا، ويوم الإجازة لا يُحتسب غيابًا، والنشاط غير المطلوب في يوم ما لا يدخل في الحساب.</li>
-        <li>الدرجة المعيارية من 60: كل معيار = (النقاط المكتسبة ÷ النقاط الممكنة في الأيام المعتمدة) × 20. تُعرض بجانبها الدرجة الفعلية (المكتسبة من الممكنة) في ملف الطالب.</li>
+        ${st.S.totalMode === 'standard' ? '<li>الدرجة المعيارية من 60: كل معيار = (النقاط المكتسبة ÷ النقاط الممكنة في الأيام المعتمدة) × 20.</li>' : '<li>الإجمالي هو مجموع النقاط المسجّلة حتى الآن من 60. في الأسبوع غير المكتمل يظهر بجانبه عدد النقاط الممكنة حتى الآن، والألوان تقيس الأداء في الأيام التي مضت، والتنبيهات والمقارنة بالأسبوع السابق تُحسب بعد اكتمال الأسبوع.</li>'}
         <li>الدرجة الأسبوعية «مؤقتة» حتى يكتمل رصد جميع أيام الأسبوع، ثم تصبح «نهائية».</li>
       </ul></details>`;
   }
@@ -1259,7 +1269,7 @@ details.method ol, details.method ul { padding-inline-start: 20px; margin: 8px 0
     const todayW = wk(s.id, E.weekStartOf(t));
     const tday = todayW && todayW.days.find((d) => d.g === t);
     const note = st.notes.get(s.id);
-    const lvl = (c) => w && w.hasData ? E.levelOf(w.crit[c].std, 20, th) : { key: 'na', label: 'لا يوجد' };
+    const lvl = (c) => w && w.hasData ? E.levelOf(w.crit[c].rate20, 20, th) : { key: 'na', label: 'لا يوجد' };
     const critRow = (c, color) => {
       const v = w && w.hasData ? w.crit[c].std : null;
       return `<div class="row"><span>${E.CRIT_LABEL[c]}</span><span class="track"><i style="width:${v === null ? 0 : v / 20 * 100}%;background:${color}"></i></span><span class="num"><b>${F(v)}</b>/20</span>${levelChip(lvl(c))}</div>`;
@@ -1299,7 +1309,7 @@ details.method ol, details.method ul { padding-inline-start: 20px; margin: 8px 0
           <div class="meta"><span>${esc(s.halaqa)}</span><span>${esc(s.group)}</span><a href="${esc(s.url)}" target="_blank" rel="noopener">سجله في منصة خليل ↗</a></div>
           <div class="scorebig">
             <div class="b"><div class="l">اليوم (${esc(E.DAY_NAMES[E.weekday(t)])})</div><div class="v">${tday && tday.max ? F(tday.earned) : '—'}<small>/15</small></div><div class="small muted">${tday ? esc(tday.label) : 'لا حلقة اليوم'}</div></div>
-            <div class="b"><div class="l">الأسبوع المحدد</div><div class="v"><span class="tot ${clsTotal(w && w.total)}">${w && w.hasData ? F(w.total) : '—'}</span><small>/60</small></div><div class="small muted">${w && w.hasData ? `الفعلية ${F(w.actualEarned)}/${w.actualMax} · ` : ''}${weekStateChip(w)}</div></div>
+            <div class="b"><div class="l">الأسبوع المحدد</div><div class="v"><span class="tot ${clsTotal(w)}">${w && w.hasData ? F(w.total) : '—'}</span><small>/60</small></div><div class="small muted">${w && w.hasData && !w.complete ? `من ${w.actualMax} ممكنة حتى الآن · ` : ''}${weekStateChip(w)}</div></div>
             <div class="b"><div class="l">عن أسبوعه السابق</div><div class="v" style="font-size:24px">${deltaHtml(a.delta)}</div><div class="small muted">${a.prev ? esc(weekLabel(a.prev.weekStart)) : 'لا يوجد أسبوع سابق'}</div></div>
           </div>
           <div class="crit" style="margin-top:18px">${critRow('att', SER()[0])}${critRow('hifz', SER()[1])}${critRow('rev', SER()[2])}</div>
@@ -1423,7 +1433,7 @@ details.method ol, details.method ul { padding-inline-start: 20px; margin: 8px 0
   function viewAlerts(root) {
     const ws = selWeek();
     const rows = rowsFor(filtered(), ws);
-    const cat = (title, list, hint) => `<div class="panel"><h3>${title} <span class="hint">${list.length}</span></h3>${hint ? `<p class="help">${hint}</p>` : ''}${list.length ? `<ul class="alert-list">${list.map((x) => `<li>${alertChip(x.al)}<div><div class="who">${studentLink(x.r.s)}</div><div class="txt">${esc(x.al.text)}</div></div><span class="tot ${clsTotal(x.r.total)}">${F(x.r.total)}</span></li>`).join('')}</ul>` : '<p class="empty">لا يوجد</p>'}</div>`;
+    const cat = (title, list, hint) => `<div class="panel"><h3>${title} <span class="hint">${list.length}</span></h3>${hint ? `<p class="help">${hint}</p>` : ''}${list.length ? `<ul class="alert-list">${list.map((x) => `<li>${alertChip(x.al)}<div><div class="who">${studentLink(x.r.s)}</div><div class="txt">${esc(x.al.text)}</div></div><span class="tot ${clsTotal(x.r.w)}">${F(x.r.total)}</span></li>`).join('')}</ul>` : '<p class="empty">لا يوجد</p>'}</div>`;
     const pick = (codes, level) => rows.flatMap((r) => (r.a ? r.a.alerts : []).filter((al) => codes.includes(al.code) && (!level || al.level === level)).map((al) => ({ r, al })));
     const th = st.S.thresholds;
     root.innerHTML = `${filterBar()}
@@ -1727,6 +1737,9 @@ details.method ol, details.method ul { padding-inline-start: 20px; margin: 8px 0
           <div class="field"><label for="pAtt">نقاط الحضور اليومية</label><input id="pAtt" type="number" min="0" max="20" step="0.5" value="${S.points.att}" ${ro}></div>
           <div class="field"><label for="pHifz">نقاط الحفظ اليومية</label><input id="pHifz" type="number" min="0" max="20" step="0.5" value="${S.points.hifz}" ${ro}></div>
           <div class="field"><label for="pRev">نقاط المراجعة أو التثبيت</label><input id="pRev" type="number" min="0" max="20" step="0.5" value="${S.points.rev}" ${ro}></div>
+          <div class="field"><label for="totMode">الإجمالي الأسبوعي</label><select id="totMode" ${ro}>
+            <option value="actual" ${S.totalMode !== 'standard' ? 'selected' : ''}>النقاط المسجّلة حتى الآن</option>
+            <option value="standard" ${S.totalMode === 'standard' ? 'selected' : ''}>درجة معيارية من 60 (حسب الأيام المنعقدة)</option></select></div>
           <div class="field"><label for="hifzScore">احتساب الحفظ</label><select id="hifzScore" ${ro}>
             <option value="any" ${S.hifzScoring === 'any' ? 'selected' : ''}>أي تسميع = الدرجة كاملة</option>
             <option value="proportional" ${S.hifzScoring === 'proportional' ? 'selected' : ''}>حسب نسبة الإنجاز من المطلوب</option></select></div>
@@ -1847,7 +1860,7 @@ details.method ol, details.method ul { padding-inline-start: 20px; margin: 8px 0
       if (!studyDays.length) { toast('اختر يومًا واحدًا على الأقل'); return; }
       const attendance = {}; Object.keys(st.S.attendance).forEach((k) => { attendance[k] = { mode: $(`[data-attmode="${CSS.escape(k)}"]`, root).value, points: Math.min(points.att, Number($(`[data-attpts="${CSS.escape(k)}"]`, root).value) || 0) }; });
       const thresholds = {}; Object.keys(st.S.thresholds).forEach((k) => { thresholds[k] = Number($('#th_' + k, root).value); });
-      saveSettings({ points, studyDays, attendance, thresholds, revPolicy: $('#revPol', root).value, revScoring: $('#revScore', root).value, hifzScoring: $('#hifzScore', root).value, missingEntry: $('#missPol', root).value }, 'scoring', 'إعدادات الاحتساب');
+      saveSettings({ points, studyDays, attendance, thresholds, revPolicy: $('#revPol', root).value, revScoring: $('#revScore', root).value, hifzScoring: $('#hifzScore', root).value, totalMode: $('#totMode', root).value, missingEntry: $('#missPol', root).value }, 'scoring', 'إعدادات الاحتساب');
     });
     $('#addHol', root).addEventListener('click', () => {
       const d = $('#holDate', root).value; if (!d) { toast('اختر التاريخ'); return; }
