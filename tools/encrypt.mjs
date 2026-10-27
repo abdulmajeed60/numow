@@ -25,7 +25,10 @@ if (weeks === 0) { console.error('no weeks exported'); process.exit(3); }
 if (docs['config/settings'].sync) delete docs['config/settings'].sync.triggerId;
 
 const plain = new TextEncoder().encode(JSON.stringify({ exportedAt: new Date().toISOString(), docs }));
-const salt = crypto.getRandomValues(new Uint8Array(16));
+// Keep the salt of the previous publish so pages already unlocked can keep decrypting new data.
+let salt = null;
+try { const prev = JSON.parse(fs.readFileSync(out, 'utf8')); if (prev && prev.salt && process.env.NUMOW_NEW_SALT !== '1') salt = new Uint8Array(Buffer.from(prev.salt, 'base64')); } catch (e) { /* first publish */ }
+if (!salt || salt.length !== 16) salt = crypto.getRandomValues(new Uint8Array(16));
 const iv = crypto.getRandomValues(new Uint8Array(12));
 const iter = 600000;
 const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(pw), 'PBKDF2', false, ['deriveKey']);

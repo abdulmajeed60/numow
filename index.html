@@ -343,27 +343,46 @@ details.method ol, details.method ul { padding-inline-start: 20px; margin: 8px 0
     return JSON.parse(new TextDecoder().decode(pt));
   }
 
-  function install(data) {
-    const store = new Map(Object.entries(data.docs || {}));
+  let store = null, curKey = null;
+  const listeners = new Set();
+  function install(data, key) {
+    curKey = key || curKey;
+    store = new Map(Object.entries(data.docs || {}));
+    window.NUMOW_EXPORTED_AT = data.exportedAt;
+    if (window.claude) { listeners.forEach((f) => { try { f(); } catch (e) { } }); return; }
     const snap = (p) => ({ id: p.split('/').pop(), exists: store.has(p), data: () => store.get(p), metadata: { fromCache: false, hasPendingWrites: false } });
     const coll = (c) => Array.from(store.keys()).filter((k) => k.startsWith(c + '/') && k.split('/').length === c.split('/').length + 1).sort().map(snap);
     const deny = async () => { throw { code: 'invalid_argument', message: 'read-only' }; };
+    const sub = (fire) => { const f = () => setTimeout(fire, 0); listeners.add(f); f(); return () => listeners.delete(f); };
     const docRef = (p) => ({ id: p.split('/').pop(), path: p, get: async () => snap(p), set: deny, update: deny, delete: deny,
-      onSnapshot: (n) => { setTimeout(() => n(snap(p)), 0); return () => {}; } });
+      onSnapshot: (n) => sub(() => n(snap(p))) });
     const query = (c) => { const q = { limit: () => q, orderBy: () => q, where: () => q,
       get: async () => { const docs = coll(c); return { docs, size: docs.length, empty: !docs.length }; },
-      onSnapshot: (n) => { setTimeout(() => { const docs = coll(c); n({ docs, size: docs.length, empty: !docs.length, docChanges: () => [], metadata: {} }); }, 0); return () => {}; },
+      onSnapshot: (n) => sub(() => { const docs = coll(c); n({ docs, size: docs.length, empty: !docs.length, docChanges: () => [], metadata: {} }); }),
       doc: (id) => docRef(c + '/' + id), add: deny }; return q; };
     const ns = { db: { doc: docRef, collection: query }, user: { id: async () => null, isOwner: () => false, canEdit: () => false, can: () => false } };
     window.claude = { use: async (n) => ns[n] || null };
-    window.NUMOW_EXPORTED_AT = data.exportedAt;
     resolveUnlock();
   }
+
+  /* Re-download the newest published data and re-render. Returns 'updated' | 'same'. */
+  window.NUMOW_REFRESH = async function () {
+    pkg = null;
+    const p = await loadPkg();
+    if (!curKey) throw new Error('locked');
+    let data;
+    try { data = await decryptWith(curKey, p); }
+    catch (e) { try { sessionStorage.removeItem('numow-key'); } catch (x) { } location.reload(); return 'reload'; }
+    if (data.exportedAt === window.NUMOW_EXPORTED_AT) return 'same';
+    install(data);
+    return 'updated';
+  };
 
   async function tryUnlock(pw) {
     const p = await loadPkg();
     const key = await keyFromPassword(pw, p);
     const data = await decryptWith(key, p);
+    curKey = key;
     try { sessionStorage.setItem('numow-key', JSON.stringify({ salt: p.salt, k: toB64(await crypto.subtle.exportKey('raw', key)) })); } catch (e) { }
     return data;
   }
@@ -374,7 +393,7 @@ details.method ol, details.method ul { padding-inline-start: 20px; margin: 8px 0
     const p = await loadPkg();
     if (saved.salt !== p.salt) return null;
     const key = await crypto.subtle.importKey('raw', b64(saved.k), { name: 'AES-GCM' }, false, ['decrypt']);
-    try { return await decryptWith(key, p); } catch (e) { return null; }
+    try { const d = await decryptWith(key, p); curKey = key; return d; } catch (e) { return null; }
   }
 
   function showLock() {
@@ -974,9 +993,15 @@ details.method ol, details.method ul { padding-inline-start: 20px; margin: 8px 0
     const t = today();
     $('#dates').textContent = `${hijri(t)} · ${greg(t)}`;
     if (st.static) {
-      const ex = window.NUMOW_EXPORTED_AT;
-      $('#syncbox').innerHTML = `<span class="chip acc">نسخة للعرض</span><span class="small muted">آخر تحديث للبيانات: ${ex ? `<span title="${esc(timeFmt.format(new Date(ex)))}">${ago(ex)}</span>` : '—'}</span><button class="btn small" type="button" id="lockNow">قفل</button>`;
+      const si = syncInfo();
+      $('#syncbox').innerHTML = `<span class="chip ${si.kind}"><span class="ico" aria-hidden="true">${si.kind === 'good' ? '●' : '!'}</span>آخر قراءة من خليل: ${si.last ? `<span title="${esc(timeFmt.format(new Date(si.last)))}">${ago(si.last)}</span>` : '—'}</span><button class="btn primary small" type="button" id="siteRefresh">تحديث</button><button class="btn small" type="button" id="lockNow">قفل</button>`;
       $('#lockNow').addEventListener('click', () => { try { sessionStorage.removeItem('numow-key'); } catch (e) { } location.reload(); });
+      $('#siteRefresh').addEventListener('click', async (e) => {
+        const b = e.currentTarget; b.disabled = true; b.textContent = 'جارٍ التحديث…';
+        try { const r = await window.NUMOW_REFRESH(); toast(r === 'updated' ? 'تم التحديث بأحدث البيانات' : 'البيانات محدّثة؛ لا جديد منذ آخر تحديث'); }
+        catch (err) { toast('تعذّر التحديث، تحقق من الاتصال'); }
+        finally { b.disabled = false; b.textContent = 'تحديث'; }
+      });
       return;
     }
     const si = syncInfo();
@@ -1662,6 +1687,7 @@ details.method ol, details.method ul { padding-inline-start: 20px; margin: 8px 0
 
   /* ---------------- settings ---------------- */
   const SYNC_PRESETS = [
+    { cron: 'CRON_TZ=Asia/Riyadh 41 14-22 * * 0-4', l: 'كل ساعة من 2:41 م إلى 10:41 م، الأحد إلى الخميس' },
     { cron: 'CRON_TZ=Asia/Riyadh 41 17,21 * * 0-4', l: 'مرتين يوميًا (5:41 م و9:41 م) من الأحد إلى الخميس' },
     { cron: 'CRON_TZ=Asia/Riyadh 41 21 * * 0-4', l: 'مرة يوميًا 9:41 م من الأحد إلى الخميس' },
     { cron: 'CRON_TZ=Asia/Riyadh 0 */3 * * 0-4', l: 'كل 3 ساعات من الأحد إلى الخميس' },
@@ -1914,6 +1940,11 @@ details.method ol, details.method ul { padding-inline-start: 20px; margin: 8px 0
     db.collection('overrides').limit(1000).onSnapshot((q) => { st.overrides = new Map(q.docs.map((d) => [d.id, d.data()])); scheduleRender(); }, fail('overrides'));
     db.collection('audit').orderBy('at', 'desc').limit(300).onSnapshot((q) => { st.audit = q.docs.map((d) => d.data()); if (st.ui.view === 'settings') scheduleRender(); }, fail('audit'));
     setInterval(() => { if (document.visibilityState === 'visible') renderHeader(); }, 60000);
+    if (st.static && window.NUMOW_REFRESH) {
+      const poll = () => { if (document.visibilityState === 'visible') window.NUMOW_REFRESH().then((r) => { if (r === 'updated') toast('وصلت بيانات جديدة'); }).catch(() => {}); };
+      setInterval(poll, 3 * 60000);
+      document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') poll(); });
+    }
   }
   window.addEventListener('beforeunload', () => { try { localStorage.setItem('numow-ui', JSON.stringify({ mode: st.ui.mode })); } catch (e) { } });
 
