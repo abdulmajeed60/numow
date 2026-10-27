@@ -433,12 +433,13 @@ details.method ol, details.method ul { padding-inline-start: 20px; margin: 8px 0
     points: { att: 5, hifz: 5, rev: 5 },
     attendance: {
       'حاضر': { mode: 'points', points: 5 },
-      'متأخر': { mode: 'points', points: 3 },
+      'متأخر': { mode: 'points', points: 5 },
       'مستأذن': { mode: 'exclude', points: 0 },
       'غائب': { mode: 'points', points: 0 }
     },
     revPolicy: 'avg',          // avg | max | min | review_first | tathbit_first
     revScoring: 'any',         // any = any recitation earns full points | proportional = by achievement ratio
+    hifzScoring: 'any',        // same choice for memorization
     missingEntry: 'zero',      // zero | skip   (present, activity required, nothing recited)
     holidays: [],              // extra holiday dates YYYY-MM-DD
     thresholds: { weekLow: 45, critical: 36, absenceRepeat: 2, absenceWindowWeeks: 4, changeNotable: 6, criterionWeak: 14, criterionGood: 16, criterionExcellent: 18 }
@@ -562,8 +563,9 @@ details.method ol, details.method ul { padding-inline-start: 20px; margin: 8px 0
     } else {
       const h = activityRatio(hifzE, settings, isAbsent);
       if (h) {
-        out.crit.hifz = { earned: round2(Math.min(1, h.ratio) * P.hifz), max: P.hifz, ratio: h.ratio, achieved: h.achieved, required: h.required, missing: h.missing };
-        if (h.missing && !isAbsent) out.flags.push('حاضر ولم يُسجَّل له تسميع حفظ');
+        const hEarned = settings.hifzScoring === 'any' ? (h.achieved > 0 ? P.hifz : 0) : round2(Math.min(1, h.ratio) * P.hifz);
+        out.crit.hifz = { earned: hEarned, max: P.hifz, ratio: h.ratio, achieved: h.achieved, required: h.required, missing: h.missing && !(h.achieved > 0) };
+        if (h.missing && !(h.achieved > 0) && !isAbsent) out.flags.push('حاضر ولم يُسجَّل له تسميع حفظ');
       }
       const m = activityRatio(murE, settings, isAbsent);
       const t = activityRatio(tatE, settings, isAbsent);
@@ -738,8 +740,8 @@ details.method ol, details.method ul { padding-inline-start: 20px; margin: 8px 0
     if (a.weakest && a.weakest.lost >= 2) {
       const c = a.weakest.c;
       rec = c === 'att' ? 'التواصل مع ولي الأمر بشأن الغياب ومتابعة انتظام الحضور في الأسبوع القادم.'
-        : c === 'hifz' ? 'متابعة مقدار الحفظ اليومي المطلوب والتأكد من تسميعه كاملًا في الأسبوع القادم.'
-          : 'تكثيف المراجعة والتثبيت في الأسبوع القادم ومتابعة تحسن مستواه فيهما.';
+        : c === 'hifz' ? (settings.hifzScoring === 'any' ? 'متابعة تسميع الحفظ في كل أيام الحلقة خلال الأسبوع القادم.' : 'متابعة مقدار الحفظ اليومي المطلوب والتأكد من تسميعه كاملًا في الأسبوع القادم.')
+          : (settings.revScoring === 'any' ? 'متابعة تسميع المراجعة أو التثبيت في كل أيام الحلقة خلال الأسبوع القادم.' : 'تكثيف المراجعة والتثبيت في الأسبوع القادم ومتابعة تحسن مستواه فيهما.');
     } else if (w.total !== null) rec = 'المحافظة على المستوى الحالي.';
     if (a.recentAbsences >= th.absenceRepeat && !(a.weakest && a.weakest.c === 'att')) rec += ' مع متابعة تكرار الغياب.';
     return { summary: parts.join('، ') + '.', recommendation: rec.trim() };
@@ -1223,7 +1225,9 @@ details.method ol, details.method ul { padding-inline-start: 20px; margin: 8px 0
     const pol = { avg: 'متوسط نسبتي المراجعة والتثبيت', max: 'الأعلى بين المراجعة والتثبيت', min: 'الأقل بينهما', review_first: 'المراجعة أولًا', tathbit_first: 'التثبيت أولًا' }[st.S.revPolicy];
     return `<details class="method"><summary>طريقة احتساب الدرجات</summary>
       <ul class="help">
-        <li>الدرجة اليومية من ${P.att + P.hifz + P.rev}: الحضور ${P.att}، والحفظ ${P.hifz}، والمراجعة أو التثبيت ${P.rev}. نسبة الإنجاز من المطلوب تتحول إلى درجة، ولا تتجاوز الدرجة الحد الأعلى ولو تجاوز الإنجاز 100%.</li>
+        <li>الدرجة اليومية من ${P.att + P.hifz + P.rev}: الحضور ${P.att}، والحفظ ${P.hifz}، والمراجعة أو التثبيت ${P.rev}.</li>
+        <li>الحضور: الحاضر${(st.S.attendance['متأخر'] || {}).points === P.att ? ' والمتأخر' : ''} ${P.att}، والغائب صفر${(st.S.attendance['مستأذن'] || {}).mode === 'exclude' ? '، والغائب بعذر لا يُحتسب يومه' : ''}.</li>
+        <li>الحفظ: ${st.S.hifzScoring === 'any' ? `أي تسميع ولو بنسبة 1% يمنح الدرجة كاملة (${P.hifz})، وعدم التسميع صفر` : 'نسبة الإنجاز من المطلوب تتحول إلى درجة، ولا تتجاوز الحد الأعلى ولو تجاوز الإنجاز 100%'}.</li>
         ${st.S.revScoring === 'any' ? `<li>المراجعة أو التثبيت: أي تسميع ولو بنسبة 1% يمنح الدرجة كاملة (${P.rev})، وعدم التسميع صفر. وإذا وُجدت المراجعة والتثبيت في اليوم نفسه تُحتسب درجة واحدة فقط.</li>` : `<li>إذا وُجدت المراجعة والتثبيت في اليوم نفسه تُحتسب درجة واحدة للمعيار حسب السياسة الحالية: ${esc(pol)}.</li>`}
         <li>اليوم الذي لم يُرصد بعد لا يُحتسب صفرًا، ويوم الإجازة لا يُحتسب غيابًا، والنشاط غير المطلوب في يوم ما لا يدخل في الحساب.</li>
         <li>الدرجة المعيارية من 60: كل معيار = (النقاط المكتسبة ÷ النقاط الممكنة في الأيام المعتمدة) × 20. تُعرض بجانبها الدرجة الفعلية (المكتسبة من الممكنة) في ملف الطالب.</li>
@@ -1723,6 +1727,9 @@ details.method ol, details.method ul { padding-inline-start: 20px; margin: 8px 0
           <div class="field"><label for="pAtt">نقاط الحضور اليومية</label><input id="pAtt" type="number" min="0" max="20" step="0.5" value="${S.points.att}" ${ro}></div>
           <div class="field"><label for="pHifz">نقاط الحفظ اليومية</label><input id="pHifz" type="number" min="0" max="20" step="0.5" value="${S.points.hifz}" ${ro}></div>
           <div class="field"><label for="pRev">نقاط المراجعة أو التثبيت</label><input id="pRev" type="number" min="0" max="20" step="0.5" value="${S.points.rev}" ${ro}></div>
+          <div class="field"><label for="hifzScore">احتساب الحفظ</label><select id="hifzScore" ${ro}>
+            <option value="any" ${S.hifzScoring === 'any' ? 'selected' : ''}>أي تسميع = الدرجة كاملة</option>
+            <option value="proportional" ${S.hifzScoring === 'proportional' ? 'selected' : ''}>حسب نسبة الإنجاز من المطلوب</option></select></div>
           <div class="field"><label for="revScore">احتساب المراجعة أو التثبيت</label><select id="revScore" ${ro}>
             <option value="any" ${S.revScoring === 'any' ? 'selected' : ''}>أي تسميع = الدرجة كاملة</option>
             <option value="proportional" ${S.revScoring === 'proportional' ? 'selected' : ''}>حسب نسبة الإنجاز من المطلوب</option></select></div>
@@ -1840,7 +1847,7 @@ details.method ol, details.method ul { padding-inline-start: 20px; margin: 8px 0
       if (!studyDays.length) { toast('اختر يومًا واحدًا على الأقل'); return; }
       const attendance = {}; Object.keys(st.S.attendance).forEach((k) => { attendance[k] = { mode: $(`[data-attmode="${CSS.escape(k)}"]`, root).value, points: Math.min(points.att, Number($(`[data-attpts="${CSS.escape(k)}"]`, root).value) || 0) }; });
       const thresholds = {}; Object.keys(st.S.thresholds).forEach((k) => { thresholds[k] = Number($('#th_' + k, root).value); });
-      saveSettings({ points, studyDays, attendance, thresholds, revPolicy: $('#revPol', root).value, revScoring: $('#revScore', root).value, missingEntry: $('#missPol', root).value }, 'scoring', 'إعدادات الاحتساب');
+      saveSettings({ points, studyDays, attendance, thresholds, revPolicy: $('#revPol', root).value, revScoring: $('#revScore', root).value, hifzScoring: $('#hifzScore', root).value, missingEntry: $('#missPol', root).value }, 'scoring', 'إعدادات الاحتساب');
     });
     $('#addHol', root).addEventListener('click', () => {
       const d = $('#holDate', root).value; if (!d) { toast('اختر التاريخ'); return; }
