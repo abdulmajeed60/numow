@@ -438,6 +438,7 @@ details.method ol, details.method ul { padding-inline-start: 20px; margin: 8px 0
       'غائب': { mode: 'points', points: 0 }
     },
     revPolicy: 'avg',          // avg | max | min | review_first | tathbit_first
+    revScoring: 'any',         // any = any recitation earns full points | proportional = by achievement ratio
     missingEntry: 'zero',      // zero | skip   (present, activity required, nothing recited)
     holidays: [],              // extra holiday dates YYYY-MM-DD
     thresholds: { weekLow: 45, critical: 36, absenceRepeat: 2, absenceWindowWeeks: 4, changeNotable: 6, criterionWeak: 14, criterionGood: 16, criterionExcellent: 18 }
@@ -568,7 +569,9 @@ details.method ol, details.method ul { padding-inline-start: 20px; margin: 8px 0
       const t = activityRatio(tatE, settings, isAbsent);
       const rv = combineRev(m, t, settings.revPolicy);
       if (rv) {
-        out.crit.rev = { earned: round2(Math.min(1, rv.ratio) * P.rev), max: P.rev, ratio: rv.ratio, chosen: rv.chosen, murajaa: m, tathbit: t, missing: rv.missing };
+        const recited = (m && m.achieved > 0) || (t && t.achieved > 0);
+        const revEarned = settings.revScoring === 'any' ? (recited ? P.rev : 0) : round2(Math.min(1, rv.ratio) * P.rev);
+        out.crit.rev = { earned: revEarned, max: P.rev, ratio: rv.ratio, chosen: settings.revScoring === 'any' ? 'any' : rv.chosen, murajaa: m, tathbit: t, missing: !recited && rv.missing };
         if (rv.missing && !isAbsent) out.flags.push('حاضر ولم يُسجَّل له تسميع مراجعة أو تثبيت');
       }
     }
@@ -1221,7 +1224,7 @@ details.method ol, details.method ul { padding-inline-start: 20px; margin: 8px 0
     return `<details class="method"><summary>طريقة احتساب الدرجات</summary>
       <ul class="help">
         <li>الدرجة اليومية من ${P.att + P.hifz + P.rev}: الحضور ${P.att}، والحفظ ${P.hifz}، والمراجعة أو التثبيت ${P.rev}. نسبة الإنجاز من المطلوب تتحول إلى درجة، ولا تتجاوز الدرجة الحد الأعلى ولو تجاوز الإنجاز 100%.</li>
-        <li>إذا وُجدت المراجعة والتثبيت في اليوم نفسه تُحتسب درجة واحدة للمعيار حسب السياسة الحالية: ${esc(pol)}.</li>
+        ${st.S.revScoring === 'any' ? `<li>المراجعة أو التثبيت: أي تسميع ولو بنسبة 1% يمنح الدرجة كاملة (${P.rev})، وعدم التسميع صفر. وإذا وُجدت المراجعة والتثبيت في اليوم نفسه تُحتسب درجة واحدة فقط.</li>` : `<li>إذا وُجدت المراجعة والتثبيت في اليوم نفسه تُحتسب درجة واحدة للمعيار حسب السياسة الحالية: ${esc(pol)}.</li>`}
         <li>اليوم الذي لم يُرصد بعد لا يُحتسب صفرًا، ويوم الإجازة لا يُحتسب غيابًا، والنشاط غير المطلوب في يوم ما لا يدخل في الحساب.</li>
         <li>الدرجة المعيارية من 60: كل معيار = (النقاط المكتسبة ÷ النقاط الممكنة في الأيام المعتمدة) × 20. تُعرض بجانبها الدرجة الفعلية (المكتسبة من الممكنة) في ملف الطالب.</li>
         <li>الدرجة الأسبوعية «مؤقتة» حتى يكتمل رصد جميع أيام الأسبوع، ثم تصبح «نهائية».</li>
@@ -1268,7 +1271,7 @@ details.method ol, details.method ul { padding-inline-start: 20px; margin: 8px 0
     const dayRows = w ? w.days.map((d) => {
       const ents = d.entries.length ? d.entries.map((e) => `<div class="ent"><span class="k">${esc(e.k || '')}</span> ${e.f || e.t ? `<span class="rng">${esc(qtxt(e.f))}${e.t ? ' ← ' + esc(qtxt(e.t)) : ''}</span>` : ''}<br><span class="num">${e.a === null ? '—' : F(e.a)} / ${e.r === null ? '—' : F(e.r)} ${esc(e.u || '')}</span>${e.p !== null && e.p !== undefined ? ` · ${bd(F(e.p) + '%')}` : e.r > 0 && d.status !== 'pending' ? ' · <span class="flag">لم يُسمِّع</span>' : ''}</div>`).join('') : '<span class="muted small">—</span>';
       const crit = (c) => d.crit[c] ? `${F(d.crit[c].earned)}${d.crit[c].overridden ? '<span class="ovr" title="معدّل يدويًا"> ✎</span>' : ''}` : '<span class="muted">—</span>';
-      const revNote = d.crit.rev && d.crit.rev.murajaa && d.crit.rev.tathbit ? `<div class="small muted">${d.crit.rev.chosen === 'avg' ? 'متوسط المراجعة والتثبيت' : d.crit.rev.chosen === 'murajaa' ? 'احتُسبت المراجعة' : 'احتُسب التثبيت'}</div>` : '';
+      const revNote = d.crit.rev && d.crit.rev.chosen === 'any' ? '' : d.crit.rev && d.crit.rev.murajaa && d.crit.rev.tathbit ? `<div class="small muted">${d.crit.rev.chosen === 'avg' ? 'متوسط المراجعة والتثبيت' : d.crit.rev.chosen === 'murajaa' ? 'احتُسبت المراجعة' : 'احتُسب التثبيت'}</div>` : '';
       return `<tr><td><b>${esc(d.dayName)}</b><div class="small muted num">${esc(greg(d.g, true))}<br>${esc(d.h ? d.h : hijri(d.g, true))}</div></td>
         <td><span class="chip ${d.status === 'present' ? 'good' : d.status === 'absent' ? 'bad' : d.status === 'late' || d.status === 'excused' ? 'warn' : 'info'}">${esc(d.label)}</span>${d.flags.map((f) => `<div class="flag">${esc(f)}</div>`).join('')}${d.override ? `<div class="ovr">تعديل يدوي: ${esc(d.override.reason || '')}</div>` : ''}</td>
         <td>${ents}</td>
@@ -1720,6 +1723,9 @@ details.method ol, details.method ul { padding-inline-start: 20px; margin: 8px 0
           <div class="field"><label for="pAtt">نقاط الحضور اليومية</label><input id="pAtt" type="number" min="0" max="20" step="0.5" value="${S.points.att}" ${ro}></div>
           <div class="field"><label for="pHifz">نقاط الحفظ اليومية</label><input id="pHifz" type="number" min="0" max="20" step="0.5" value="${S.points.hifz}" ${ro}></div>
           <div class="field"><label for="pRev">نقاط المراجعة أو التثبيت</label><input id="pRev" type="number" min="0" max="20" step="0.5" value="${S.points.rev}" ${ro}></div>
+          <div class="field"><label for="revScore">احتساب المراجعة أو التثبيت</label><select id="revScore" ${ro}>
+            <option value="any" ${S.revScoring === 'any' ? 'selected' : ''}>أي تسميع = الدرجة كاملة</option>
+            <option value="proportional" ${S.revScoring === 'proportional' ? 'selected' : ''}>حسب نسبة الإنجاز من المطلوب</option></select></div>
           <div class="field"><label for="revPol">عند وجود المراجعة والتثبيت معًا</label><select id="revPol" ${ro}>
             ${[['avg', 'متوسط النسبتين'], ['max', 'الأعلى منهما'], ['min', 'الأقل منهما'], ['review_first', 'المراجعة أولًا'], ['tathbit_first', 'التثبيت أولًا']].map(([k, l]) => `<option value="${k}" ${S.revPolicy === k ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
           <div class="field"><label for="missPol">حاضر والنشاط مطلوب ولم يُسجَّل تسميع</label><select id="missPol" ${ro}>
@@ -1834,7 +1840,7 @@ details.method ol, details.method ul { padding-inline-start: 20px; margin: 8px 0
       if (!studyDays.length) { toast('اختر يومًا واحدًا على الأقل'); return; }
       const attendance = {}; Object.keys(st.S.attendance).forEach((k) => { attendance[k] = { mode: $(`[data-attmode="${CSS.escape(k)}"]`, root).value, points: Math.min(points.att, Number($(`[data-attpts="${CSS.escape(k)}"]`, root).value) || 0) }; });
       const thresholds = {}; Object.keys(st.S.thresholds).forEach((k) => { thresholds[k] = Number($('#th_' + k, root).value); });
-      saveSettings({ points, studyDays, attendance, thresholds, revPolicy: $('#revPol', root).value, missingEntry: $('#missPol', root).value }, 'scoring', 'إعدادات الاحتساب');
+      saveSettings({ points, studyDays, attendance, thresholds, revPolicy: $('#revPol', root).value, revScoring: $('#revScore', root).value, missingEntry: $('#missPol', root).value }, 'scoring', 'إعدادات الاحتساب');
     });
     $('#addHol', root).addEventListener('click', () => {
       const d = $('#holDate', root).value; if (!d) { toast('اختر التاريخ'); return; }
