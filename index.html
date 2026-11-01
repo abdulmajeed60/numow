@@ -440,6 +440,7 @@ details.method ol, details.method ul { padding-inline-start: 20px; margin: 8px 0
     revPolicy: 'avg',          // avg | max | min | review_first | tathbit_first
     revScoring: 'any',         // any = any recitation earns full points | proportional = by achievement ratio
     hifzScoring: 'any',        // same choice for memorization
+    reviewAsHifz: [],          // [{halaqa, days:[weekday]}]: on those days, with no memorization required, review counts as memorization
     totalMode: 'actual',       // actual = points recorded so far | standard = scaled to 60 over the days held
     missingEntry: 'zero',      // zero | skip   (present, activity required, nothing recited)
     holidays: [],              // extra holiday dates YYYY-MM-DD
@@ -553,8 +554,14 @@ details.method ol, details.method ul { padding-inline-start: 20px; margin: 8px 0
     const attPts = pol ? Math.min(P.att, Math.max(0, Number(pol.points) || 0)) : 0;
     out.crit.att = { earned: attPts, max: P.att };
 
-    const hifzE = out.entries.filter((e) => e.kind === 'hifz');
-    const murE = out.entries.filter((e) => e.kind === 'murajaa');
+    let hifzE = out.entries.filter((e) => e.kind === 'hifz');
+    let murE = out.entries.filter((e) => e.kind === 'murajaa');
+    const swapRule = (settings.reviewAsHifz || []).some((r) => r && r.halaqa === ctx.halaqa && (r.days || []).includes(wd));
+    if (swapRule && !hifzE.some((e) => e.r > 0) && murE.some((e) => e.r > 0)) {
+      hifzE = murE; murE = [];
+      out.reviewAsHifz = true;
+      out.entries.forEach((e) => { if (e.kind === 'murajaa') e.countsAs = 'hifz'; });
+    }
     const tatE = out.entries.filter((e) => e.kind === 'tathbit');
     const isAbsent = out.status === 'absent' || (out.status === 'excused');
 
@@ -566,7 +573,7 @@ details.method ol, details.method ul { padding-inline-start: 20px; margin: 8px 0
       if (h) {
         const hEarned = settings.hifzScoring === 'any' ? (h.achieved > 0 ? P.hifz : 0) : round2(Math.min(1, h.ratio) * P.hifz);
         out.crit.hifz = { earned: hEarned, max: P.hifz, ratio: h.ratio, achieved: h.achieved, required: h.required, missing: h.missing && !(h.achieved > 0) };
-        if (h.missing && !(h.achieved > 0) && !isAbsent) out.flags.push('حاضر ولم يُسجَّل له تسميع حفظ');
+        if (h.missing && !(h.achieved > 0) && !isAbsent) out.flags.push(out.reviewAsHifz ? 'حاضر ولم يُسجَّل له تسميع المراجعة (تُحتسب حفظًا اليوم)' : 'حاضر ولم يُسجَّل له تسميع حفظ');
       }
       const m = activityRatio(murE, settings, isAbsent);
       const t = activityRatio(tatE, settings, isAbsent);
@@ -610,7 +617,7 @@ details.method ol, details.method ul { padding-inline-start: 20px; margin: 8px 0
     const today = opts.today || riyadhToday();
     const overrides = opts.overrides || {};
     const P = settings.points;
-    const days = (doc.days || []).map((d) => scoreDay(d, settings, { override: overrides[doc.sid + '_' + d.g] }));
+    const days = (doc.days || []).map((d) => scoreDay(d, settings, { override: overrides[doc.sid + '_' + d.g], halaqa: opts.halaqa }));
     const agg = {}; for (const c of CRITERIA) agg[c] = { earned: 0, max: 0 };
     let pending = 0, studyDays = 0, absent = 0, late = 0, excused = 0, present = 0, holidays = 0;
     for (const d of days) {
@@ -853,6 +860,7 @@ details.method ol, details.method ul { padding-inline-start: 20px; margin: 8px 0
   function overridesMap() { const o = {}; st.overrides.forEach((v, k) => { o[k] = v; }); return o; }
 
   function rebuild() {
+    const halaqaOf = {}; students(true).forEach((s) => { halaqaOf[s.id] = s.halaqa; });
     const S = st.S;
     const range = semesterRange();
     const ov = overridesMap();
@@ -863,7 +871,7 @@ details.method ol, details.method ul { padding-inline-start: 20px; margin: 8px 0
       if (!doc || !doc.sid || !doc.weekStart) return;
       if (doc.weekStart < range.start || doc.weekStart > range.end) return;
       let w;
-      try { w = E.scoreWeek(doc, S, { today: t, overrides: ov }); } catch (e) { console.error(e); return; }
+      try { w = E.scoreWeek(doc, S, { today: t, overrides: ov, halaqa: halaqaOf[doc.sid] }); } catch (e) { console.error(e); return; }
       if (!bySid.has(doc.sid)) bySid.set(doc.sid, []);
       bySid.get(doc.sid).push(w);
       weekSet.add(doc.weekStart);
@@ -1237,6 +1245,7 @@ details.method ol, details.method ul { padding-inline-start: 20px; margin: 8px 0
       <ul class="help">
         <li>الدرجة اليومية من ${P.att + P.hifz + P.rev}: الحضور ${P.att}، والحفظ ${P.hifz}، والمراجعة أو التثبيت ${P.rev}.</li>
         <li>الحضور: الحاضر${(st.S.attendance['متأخر'] || {}).points === P.att ? ' والمتأخر' : ''} ${P.att}، والغائب صفر${(st.S.attendance['مستأذن'] || {}).mode === 'exclude' ? '، والغائب بعذر لا يُحتسب يومه' : ''}.</li>
+        ${(st.S.reviewAsHifz || []).length ? `<li>يوم الأربعاء في ${esc(st.S.reviewAsHifz.map((r) => r.halaqa).join('، '))}: لا يوجد حفظ، فتحلّ المراجعة محلّه وتُحتسب في معيار الحفظ، والتثبيت في معيار المراجعة أو التثبيت.</li>` : ''}
         <li>الحفظ: ${st.S.hifzScoring === 'any' ? `أي تسميع ولو بنسبة 1% يمنح الدرجة كاملة (${P.hifz})، وعدم التسميع صفر` : 'نسبة الإنجاز من المطلوب تتحول إلى درجة، ولا تتجاوز الحد الأعلى ولو تجاوز الإنجاز 100%'}.</li>
         ${st.S.revScoring === 'any' ? `<li>المراجعة أو التثبيت: أي تسميع ولو بنسبة 1% يمنح الدرجة كاملة (${P.rev})، وعدم التسميع صفر. وإذا وُجدت المراجعة والتثبيت في اليوم نفسه تُحتسب درجة واحدة فقط.</li>` : `<li>إذا وُجدت المراجعة والتثبيت في اليوم نفسه تُحتسب درجة واحدة للمعيار حسب السياسة الحالية: ${esc(pol)}.</li>`}
         <li>اليوم الذي لم يُرصد بعد لا يُحتسب صفرًا، ويوم الإجازة لا يُحتسب غيابًا، والنشاط غير المطلوب في يوم ما لا يدخل في الحساب.</li>
@@ -1283,7 +1292,7 @@ details.method ol, details.method ul { padding-inline-start: 20px; margin: 8px 0
     })();
 
     const dayRows = w ? w.days.map((d) => {
-      const ents = d.entries.length ? d.entries.map((e) => `<div class="ent"><span class="k">${esc(e.k || '')}</span> ${e.f || e.t ? `<span class="rng">${esc(qtxt(e.f))}${e.t ? ' ← ' + esc(qtxt(e.t)) : ''}</span>` : ''}<br><span class="num">${e.a === null ? '—' : F(e.a)} / ${e.r === null ? '—' : F(e.r)} ${esc(e.u || '')}</span>${e.p !== null && e.p !== undefined ? ` · ${bd(F(e.p) + '%')}` : e.r > 0 && d.status !== 'pending' ? ' · <span class="flag">لم يُسمِّع</span>' : ''}</div>`).join('') : '<span class="muted small">—</span>';
+      const ents = d.entries.length ? d.entries.map((e) => `<div class="ent"><span class="k">${esc(e.k || '')}${e.countsAs === 'hifz' ? ' <span class="small muted">(تُحتسب حفظًا)</span>' : ''}</span> ${e.f || e.t ? `<span class="rng">${esc(qtxt(e.f))}${e.t ? ' ← ' + esc(qtxt(e.t)) : ''}</span>` : ''}<br><span class="num">${e.a === null ? '—' : F(e.a)} / ${e.r === null ? '—' : F(e.r)} ${esc(e.u || '')}</span>${e.p !== null && e.p !== undefined ? ` · ${bd(F(e.p) + '%')}` : e.r > 0 && d.status !== 'pending' ? ' · <span class="flag">لم يُسمِّع</span>' : ''}</div>`).join('') : '<span class="muted small">—</span>';
       const crit = (c) => d.crit[c] ? `${F(d.crit[c].earned)}${d.crit[c].overridden ? '<span class="ovr" title="معدّل يدويًا"> ✎</span>' : ''}` : '<span class="muted">—</span>';
       const revNote = d.crit.rev && d.crit.rev.chosen === 'any' ? '' : d.crit.rev && d.crit.rev.murajaa && d.crit.rev.tathbit ? `<div class="small muted">${d.crit.rev.chosen === 'avg' ? 'متوسط المراجعة والتثبيت' : d.crit.rev.chosen === 'murajaa' ? 'احتُسبت المراجعة' : 'احتُسب التثبيت'}</div>` : '';
       return `<tr><td><b>${esc(d.dayName)}</b><div class="small muted num">${esc(greg(d.g, true))}<br>${esc(d.h ? d.h : hijri(d.g, true))}</div></td>
@@ -1737,6 +1746,7 @@ details.method ol, details.method ul { padding-inline-start: 20px; margin: 8px 0
           <div class="field"><label for="pAtt">نقاط الحضور اليومية</label><input id="pAtt" type="number" min="0" max="20" step="0.5" value="${S.points.att}" ${ro}></div>
           <div class="field"><label for="pHifz">نقاط الحفظ اليومية</label><input id="pHifz" type="number" min="0" max="20" step="0.5" value="${S.points.hifz}" ${ro}></div>
           <div class="field"><label for="pRev">نقاط المراجعة أو التثبيت</label><input id="pRev" type="number" min="0" max="20" step="0.5" value="${S.points.rev}" ${ro}></div>
+          <div class="field" style="grid-column:1/-1"><label>المراجعة تُحتسب حفظًا يوم الأربعاء (للحلقات التي ليس لديها حفظ ذلك اليوم)</label><div class="daypick">${(st.roster ? st.roster.halaqat : []).map((h) => `<label><input type="checkbox" data-rah="${esc(h)}" ${(S.reviewAsHifz || []).some((r) => r.halaqa === h && (r.days || []).includes(3)) ? 'checked' : ''} ${ro}> ${esc(h)}</label>`).join('')}</div></div>
           <div class="field"><label for="totMode">الإجمالي الأسبوعي</label><select id="totMode" ${ro}>
             <option value="actual" ${S.totalMode !== 'standard' ? 'selected' : ''}>النقاط المسجّلة حتى الآن</option>
             <option value="standard" ${S.totalMode === 'standard' ? 'selected' : ''}>درجة معيارية من 60 (حسب الأيام المنعقدة)</option></select></div>
@@ -1860,7 +1870,7 @@ details.method ol, details.method ul { padding-inline-start: 20px; margin: 8px 0
       if (!studyDays.length) { toast('اختر يومًا واحدًا على الأقل'); return; }
       const attendance = {}; Object.keys(st.S.attendance).forEach((k) => { attendance[k] = { mode: $(`[data-attmode="${CSS.escape(k)}"]`, root).value, points: Math.min(points.att, Number($(`[data-attpts="${CSS.escape(k)}"]`, root).value) || 0) }; });
       const thresholds = {}; Object.keys(st.S.thresholds).forEach((k) => { thresholds[k] = Number($('#th_' + k, root).value); });
-      saveSettings({ points, studyDays, attendance, thresholds, revPolicy: $('#revPol', root).value, revScoring: $('#revScore', root).value, hifzScoring: $('#hifzScore', root).value, totalMode: $('#totMode', root).value, missingEntry: $('#missPol', root).value }, 'scoring', 'إعدادات الاحتساب');
+      saveSettings({ points, studyDays, attendance, thresholds, revPolicy: $('#revPol', root).value, revScoring: $('#revScore', root).value, hifzScoring: $('#hifzScore', root).value, totalMode: $('#totMode', root).value, reviewAsHifz: $$('[data-rah]', root).filter((c) => c.checked).map((c) => ({ halaqa: c.dataset.rah, days: [3] })), missingEntry: $('#missPol', root).value }, 'scoring', 'إعدادات الاحتساب');
     });
     $('#addHol', root).addEventListener('click', () => {
       const d = $('#holDate', root).value; if (!d) { toast('اختر التاريخ'); return; }
